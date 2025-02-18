@@ -1,7 +1,7 @@
 <template>
   <div class="therapist-header" @click="absenceDialog = true">
     {{ therapist }}
-    <v-dialog v-model="absenceDialog" width="600">
+    <v-dialog v-model="absenceDialog" width="800">
       <v-card>
         <v-card-title class="text-h5 grey lighten-2">
           {{ absenceType }} von {{ therapist }} am {{ date }}
@@ -94,34 +94,58 @@
               </v-btn>
             </v-col>
           </v-row>
+          <h3 v-if="newVacationAbsences.length > 0">Urlaub/ Tages Abwesenheiten</h3>
+          <v-row v-for="(absence, index) in newVacationAbsences"
+          :key="`${absence.start}-${absence.end}-${index}`"
+          >
+            <v-col>
+              <v-text-field
+                v-model="vacationStart"
+                label="Von"
+                type="date"
+              ></v-text-field>
+            </v-col>
+            <v-col>
+              <v-text-field
+                v-model="vacationEnd"
+                label="Bis"
+                type="date"
+              ></v-text-field>
+            </v-col>
+          </v-row>
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
           <v-btn color="normal" text @click="resetInputs()"> Abbrechen </v-btn>
           <v-spacer></v-spacer>
-              <v-btn
-                color="primary"
-                @click="newAbsences.push({ start: null, end: null })"
-              >
-                Neue Abwesenheit
-              </v-btn>
-              <v-btn
-                color="primary"
-                @click="newExceptions.push({ start: null, end: null })"
-              >
-                Neue Ausnahme
-              </v-btn>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="success"
-            button
-            @click="
-              submitAbsences();
-              createDialog = false;
-            "
-          >
-            Speichern
-          </v-btn>
+            <v-btn
+              color="primary"
+              @click="newAbsences.push({ start: null, end: null })"
+            >
+              + Abwesenheit
+            </v-btn>
+            <v-btn
+              color="primary"
+              @click="newExceptions.push({ start: null, end: null })"
+            >
+              + Ausnahme
+            </v-btn>
+            <v-btn
+                  color="primary"
+                  @click="this.newVacationAbsences.push({ day: null, start: null, end: null })"
+                >
+                  + Urlaub
+            </v-btn>
+            <v-btn
+              color="success"
+              button
+              @click="
+                submitAbsences();
+                createDialog = false;
+              "
+            >
+              Speichern
+            </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -129,6 +153,7 @@
 </template>
 
 <script lang="ts">
+import Absence from '@/class/Absence';
 import Dateconversions from '@/class/Dateconversions';
 import { Time } from '@/class/Enums';
 import { Component, Prop, Vue } from 'vue-property-decorator';
@@ -149,9 +174,15 @@ export default class DaylistHeader extends Vue {
 
   private absenceType = Dateconversions.convertReadableStringToDate(this.date).getDay() === 6 ? 'Anwesenheiten' : 'Abwesenheiten';
 
+  vacationStart: string | null = null;
+
+  vacationEnd: string | null = null;
+
   times = Dateconversions.getAllTimes();
 
   newAbsences = JSON.parse(JSON.stringify(this.absences)) as { start: Time, end: Time }[];
+
+  newVacationAbsences = JSON.parse(JSON.stringify(this.absences)) as { day: string, start: Time, end: Time }[];
 
   newExceptions = JSON.parse(JSON.stringify(this.exceptions)) as { start: Time, end: Time }[];
 
@@ -168,6 +199,10 @@ export default class DaylistHeader extends Vue {
       end: exc.end,
       times: this.times.slice(this.times.indexOf(exc.start.toString()), this.times.indexOf(exc.end.toString()) + 1),
     }));
+
+    this.vacationStart = null;
+    this.vacationEnd = null;
+
     this.absenceDialog = false;
   }
 
@@ -175,12 +210,33 @@ export default class DaylistHeader extends Vue {
     const absencesToBeSubmitted = this.newAbsences.filter((abs) => abs.start !== null && abs.end !== null);
     const exceptionsToBeSubmitted = this.newExceptions.filter((abs) => abs.start !== null && abs.end !== null);
 
+    // Falls ein Urlaubszeitraum gesetzt wurde, generiere Abwesenheiten
+    if (this.vacationStart && this.vacationEnd) {
+      const vacationAbsences = DaylistHeader.generateAbsenceEntries(this.vacationStart, this.vacationEnd);
+      absencesToBeSubmitted.push(...vacationAbsences);
+    }
+
     this.$emit('absencesChanged', {
       exceptions: exceptionsToBeSubmitted,
       absences: absencesToBeSubmitted,
       therapistID: this.therapistID.slice(),
     });
     this.resetInputs();
+  }
+
+  static generateAbsenceEntries(startDate: string, endDate: string): Absence[] {
+    const absences: Absence[] = [];
+    const currentDate = new Date(startDate);
+    const lastDate = new Date(endDate);
+    // Standard-Arbeitszeiten basierend auf dem `Time`-Enum
+    while (currentDate <= lastDate) {
+      const formattedDate = currentDate.toISOString().split('T')[0].split('-').reverse().join('.'); // DD.MM.YYYY Format
+      absences.push(new Absence(formattedDate, Time['7:00'], Time['20:50']));
+      console.log(absences);
+      // Einen Tag weitergehen
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return absences;
   }
 }
 
