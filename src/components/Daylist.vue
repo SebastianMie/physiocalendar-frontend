@@ -14,12 +14,13 @@
                   :therapist="header.text"
                   :therapistID="header.id"
                   :head="header"
-                  :absences="header.absences.filter((abs) => abs.day.includes('.'))"
+                  :dayAbsences="header.absences.filter((abs) => abs.day.includes('.'))"
                   :masterlistAbsences="header.absences.filter((abs) => !abs.day.includes('.'))"
                   :exceptions="header.exceptions"
                   :date="currentSingleDay"
                   :key="`${hash}-${header.id}`"
                   @absencesChanged="saveAbsences($event)"
+                  @exceptionsChanged="saveExceptions($event)"
                 />
             </th>
           </tr>
@@ -565,8 +566,6 @@ export default class Daylist extends Vue {
 
   private searchValue = '';
 
-  private patient1 = '';
-
   private foundPatients : string[] = [];
 
   get localBackup(): Backup | null {
@@ -686,13 +685,6 @@ export default class Daylist extends Vue {
   });
   }
 
-  private hasCancellationForCurrentDate(entry: string | Time | SingleAppointment | AppointmentSeries): boolean {
-    if (entry instanceof AppointmentSeries) {
-      return entry.cancellations.some((c) => c.date === this.currentSingleDay);
-    }
-    return false;
-  }
-
   private hasOngoingAppointments(therapist : string, time: Time) : boolean {
     return this.rows.some((row) => {
       if (row[therapist] !== '') {
@@ -709,7 +701,7 @@ export default class Daylist extends Vue {
     });
   }
 
-  public isCellException(appointment : string | AppointmentSeries | SingleAppointment, pId: string): boolean {
+  public isCellException(appointment : string | AppointmentSeries | SingleAppointment): boolean {
     if (typeof appointment === 'string') {
       return false;
     }
@@ -891,7 +883,6 @@ export default class Daylist extends Vue {
       event.id,
       event.isBWO,
     );
-    console.log('Serien termin erstellen');
     if (this.localBackup) {
       this.store.addAppointmentSeries(appointment);
     }
@@ -1089,18 +1080,27 @@ export default class Daylist extends Vue {
     return hasAbsence;
   }
 
-  private saveAbsences(event: { absences: [{ start: string, end: string }], masterlistAbsences: [{ start: string, end: string }],
-    exceptions: [{ start: string, end: string }], therapistID: string }): void {
-    if (this.localBackup) {
-      const absences = event.absences.map(
-        (abs) => new Absence(this.currentSingleDay, abs.start as unknown as Time, abs.end as unknown as Time),
-      );
-      this.store.setAbsencesForTherapistForDay({ absences, therapistID: event.therapistID.slice(), day: this.currentSingleDay });
-      const exceptions = event.exceptions.map(
-        (exc) => new Exception(this.currentSingleDay, exc.start as unknown as Time, exc.end as unknown as Time),
-      );
-      this.store.setExceptionsForTherapistForDay({ exceptions, therapistID: event.therapistID.slice(), day: this.currentSingleDay });
-    }
+  private saveAbsences(event: { absences: Absence[], therapistID: string }): void {
+    const absences = event.absences.map(
+      (abs) => new Absence(abs.day, abs.start as Time, abs.end as Time),
+    );
+    this.store.setAbsencesForTherapistForDay({
+      absences,
+      therapistID: event.therapistID,
+      day: this.currentSingleDay,
+    });
+  }
+
+  private saveExceptions(event: { exceptions: Exception[], therapistID: string }): void {
+
+    const exceptions = event.exceptions.map(
+      (exc) => new Exception(this.currentSingleDay, exc.start as Time, exc.end as Time),
+    );
+    this.store.setExceptionsForTherapistForDay({
+      exceptions,
+      therapistID: event.therapistID,
+      day: this.currentSingleDay,
+    });
   }
 
   private searchPatients(searchQuery : string | undefined) : void {

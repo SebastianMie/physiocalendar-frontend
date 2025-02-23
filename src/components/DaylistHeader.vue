@@ -9,13 +9,21 @@
 
         <v-card-text class="pt-5">
           <!-- Bestehende Abwesenheiten anzeigen -->
-          <h3 v-if="absences.length > 0">Bestehende Abwesenheiten</h3>
-          <v-row v-for="(absence, index) in absences" :key="index">
+          <h3 v-if="dayAbsences.length > 0">Bestehende Abwesenheiten</h3>
+          <v-row v-for="(absence, index) in dayAbsences" :key="index">
             <v-col>
               {{ absence.day }} - {{ absence.start }} bis {{ absence.end }}
-            </v-col>
-            <v-col cols="1">
               <v-btn icon color="error" @click="removeAbsence(index)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-col>
+          </v-row>
+          <!-- Bestehende Ausnahmen anzeigen -->
+          <h3 v-if="exceptions.length > 0">Bestehende Ausnahmen</h3>
+          <v-row v-for="(exception, index) in exceptions" :key="index">
+            <v-col>
+              {{ exception.day }} - {{ exception.start }} bis {{ exception.end }}
+              <v-btn icon color="error" @click="removeException(index)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </v-col>
@@ -27,37 +35,35 @@
               <v-alert type="info">
                 Stammlisten-Abwesenheiten:
                 <p style="margin-bottom: 0" v-for="(absence, index) in masterlistAbsences" :key="index">
-                  <v-btn title="Ausnahme hinzufügen" icon @click="addException(absence)">
                     <v-icon>mdi-account-star</v-icon>
-                  </v-btn>
                   {{ absence.day }} - {{ absence.start }} bis {{ absence.end }}
                 </p>
               </v-alert>
             </v-col>
           </v-row>
-
-          <!-- Bestehende Ausnahmen anzeigen -->
-          <h3 v-if="localExceptions.length > 0">Neue Ausnahmen</h3>
-          <v-row v-for="(exception, index) in localExceptions" :key="index">
+          <h3 v-if="newException"> Neue Ausnahme</h3>
+          <v-row v-if="newException">
             <v-col>
-              <v-select :items="times" v-model="localExceptions[index].start" label="Von"></v-select>
+              <v-select
+                :items="times"
+                v-model="exceptionStartTime"
+                label="Von"
+              ></v-select>
             </v-col>
             <v-col>
-              <v-select :items="times" v-model="localExceptions[index].end" label="Bis"></v-select>
-            </v-col>
-            <v-col cols="1">
-              <v-btn icon color="error" @click="removeException(index)">
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
+              <v-select
+                :items="times"
+                v-model="exceptionEndTime"
+                label="Bis"
+              ></v-select>
             </v-col>
           </v-row>
-
           <!-- Toggle für Einzel- oder Zeitraum-Abwesenheit -->
-          <h3>Neue Abwesenheit hinzufügen</h3>
-          <v-switch v-model="isMultiDay" label="Zeitraum-Abwesenheit"></v-switch>
+          <h3 v-if="newAbsence">Neue Abwesenheit hinzufügen</h3>
+          <v-switch v-if="newAbsence" v-model="isMultiDay" label="Zeitraum-Abwesenheit"></v-switch>
 
           <!-- Eingabe für Datum: Entweder Einzel- oder Zeitraum -->
-          <v-row>
+          <v-row v-if="newAbsence">
             <v-col v-if="isMultiDay">
               <v-text-field v-model="absenceStartDate" label="Von" type="date"></v-text-field>
             </v-col>
@@ -67,21 +73,25 @@
           </v-row>
 
           <!-- Eingabe für Uhrzeiten -->
-          <v-row>
+          <v-row v-if="newAbsence">
             <v-col>
-              <v-select :items="times" v-model="absenceStartTime" label="Von Uhrzeit"></v-select>
+              <v-select :items="times" v-model="absenceStartTime" label="Von"></v-select>
             </v-col>
             <v-col>
-              <v-select :items="times" v-model="absenceEndTime" label="Bis Uhrzeit"></v-select>
+              <v-select :items="times" v-model="absenceEndTime" label="Bis"></v-select>
             </v-col>
           </v-row>
         </v-card-text>
 
         <v-divider></v-divider>
-
         <v-card-actions>
-          <v-btn color="normal" text @click="resetInputs()"> Abbrechen </v-btn>
-          <v-spacer></v-spacer>
+          <v-btn color="normal" text @click="resetInputsClose()"> Abbrechen </v-btn>
+          <!-- Button für neue Abwesenheit -->
+          <v-btn color="primary" @click="newAbsence = true"> Neue Abwesenheit </v-btn>
+
+          <!-- Button für neue Ausnahme -->
+          <v-btn color="primary" @click="newException = true"> Neue Ausnahme </v-btn>
+
           <v-btn color="success" button @click="submitAbsences()"> Speichern </v-btn>
         </v-card-actions>
       </v-card>
@@ -102,22 +112,26 @@ export default class DaylistHeader extends Vue {
 
   @Prop() readonly therapistID!: string;
 
-  @Prop() readonly absences!: { day: string, start: Time, end: Time }[];
+  @Prop() readonly dayAbsences!: Absence[];
 
-  @Prop() readonly exceptions!: { start: Time, end: Time }[];
+  @Prop() readonly exceptions!: Exception[];
 
   @Prop() readonly date!: string;
 
-  @Prop() readonly masterlistAbsences!: { day: string, start: Time, end: Time }[];
+  @Prop() readonly masterlistAbsences!: Absence[];
 
   // Standardwerte für Abwesenheiten
   absenceStartDate: string | null = this.date;
 
   absenceEndDate: string | null = null;
 
-  absenceStartTime: Time = Time['7:00'];
+  absenceStartTime: Time | null = null;
 
-  absenceEndTime: Time = Time['20:50'];
+  absenceEndTime: Time | null = null;
+
+  exceptionStartTime: Time | null = null;
+
+  exceptionEndTime: Time | null = null;
 
   isMultiDay = false; // Umschalter für Tages- oder Zeitraum-Abwesenheit
 
@@ -125,8 +139,12 @@ export default class DaylistHeader extends Vue {
 
   absenceDialog = false;
 
+  newAbsence = false;
+
+  newException = false;
+
   // Lokale Arrays für Änderungen
-  localAbsences = JSON.parse(JSON.stringify(this.absences)) as Absence[];
+  localAbsences = JSON.parse(JSON.stringify(this.dayAbsences)) as Absence[];
 
   localExceptions = JSON.parse(JSON.stringify(this.exceptions)) as Exception[];
 
@@ -134,26 +152,90 @@ export default class DaylistHeader extends Vue {
     this.resetInputs();
   }
 
-  // Entfernt eine bestehende Abwesenheit
+  addAbsence(): void {
+    if (!this.absenceStartTime || !this.absenceEndTime) return;
+
+    const newAbsence = new Absence(this.date, this.absenceStartTime, this.absenceEndTime);
+    this.localAbsences.push(newAbsence);
+
+    // Direktes Event-Feuern
+    this.$emit('absencesChanged', {
+      absences: this.localAbsences,
+      therapistID: this.therapistID,
+    });
+
+    console.log('Neue Abwesenheit hinzugefügt:', newAbsence);
+  }
+
+  addException(): void {
+    if (!this.exceptionStartTime || !this.exceptionEndTime) return;
+
+    const newException = new Exception(this.date, this.exceptionStartTime, this.exceptionEndTime);
+    this.localExceptions.push(newException);
+
+    // Direktes Event-Feuern
+    this.$emit('exceptionsChanged', {
+      exceptions: this.localExceptions,
+      therapistID: this.therapistID,
+    });
+
+    console.log('Neue Ausnahme hinzugefügt:', newException);
+  }
+
   removeAbsence(index: number): void {
     console.log('Lösche Abwesenheit:', this.localAbsences[index]);
     this.localAbsences.splice(index, 1);
+
+    // Direktes Event-Feuern
+    this.$emit('absencesChanged', {
+      absences: this.localAbsences,
+      therapistID: this.therapistID,
+    });
   }
 
   // Entfernt eine Ausnahme
   removeException(index: number): void {
     console.log('Lösche Ausnahme:', this.localExceptions[index]);
     this.localExceptions.splice(index, 1);
+
+    // Direktes Event-Feuern
+    this.$emit('exceptionsChanged', {
+      exceptions: this.localExceptions,
+      therapistID: this.therapistID,
+    });
   }
 
   resetInputs(): void {
     console.log('Eingaben zurücksetzen');
-    this.localAbsences = JSON.parse(JSON.stringify(this.absences));
+    console.log('weeklyAbsences:', this.dayAbsences);
+    console.log('day Absences:', this.masterlistAbsences);
+    this.localAbsences = JSON.parse(JSON.stringify(this.masterlistAbsences));
     this.localExceptions = JSON.parse(JSON.stringify(this.exceptions));
     this.absenceStartDate = null;
     this.absenceEndDate = null;
-    this.absenceStartTime = Time['7:00'];
-    this.absenceEndTime = Time['20:50'];
+    this.absenceStartTime = null;
+    this.absenceEndTime = null;
+    this.exceptionStartTime = null;
+    this.exceptionEndTime = null;
+    this.newAbsence = false;
+    this.newException = false;
+  }
+
+  resetInputsClose(): void {
+    console.log('Eingaben zurücksetzen');
+    console.log('weeklyAbsences:', this.dayAbsences);
+    console.log('day Absences:', this.masterlistAbsences);
+    this.localAbsences = JSON.parse(JSON.stringify(this.masterlistAbsences));
+    this.localExceptions = JSON.parse(JSON.stringify(this.exceptions));
+    this.absenceStartDate = null;
+    this.absenceEndDate = null;
+    this.absenceStartTime = null;
+    this.absenceEndTime = null;
+    this.exceptionStartTime = null;
+    this.exceptionEndTime = null;
+    this.newAbsence = false;
+    this.newException = false;
+
     this.absenceDialog = false;
   }
 
@@ -162,47 +244,67 @@ export default class DaylistHeader extends Vue {
     if (!this.date) return;
 
     let absencesToBeSubmitted: Absence[] = [];
+    debugger;
 
-    if (this.isMultiDay && this.absenceEndDate) {
+    this.addException();
+    // if (this.exceptionEndTime && this.exceptionStartTime) {
+    //   this.localExceptions.push(new Exception(this.date, this.exceptionStartTime, this.exceptionEndTime));
+    // }
+
+    // if (this.absenceStartTime && this.absenceEndTime) {
+    //   this.localAbsences.push(new Absence(this.date, this.absenceStartTime, this.absenceEndTime));
+    // }
+
+    if (this.isMultiDay && this.absenceStartTime && this.absenceEndTime && this.absenceStartDate && this.absenceEndDate) {
       absencesToBeSubmitted = DaylistHeader.generateAbsenceEntries(
-        this.date,
+        this.absenceStartDate,
         this.absenceEndDate,
         this.absenceStartTime,
         this.absenceEndTime,
       );
+      if (absencesToBeSubmitted.length > 0) {
+        this.$emit('absencesChanged', {
+          absences: absencesToBeSubmitted,
+          therapistID: this.therapistID.slice(),
+        });
+      }
     } else {
-      absencesToBeSubmitted.push(new Absence(this.date, this.absenceStartTime, this.absenceEndTime));
+      this.addAbsence();
     }
 
     console.log('Speichere Abwesenheiten:', absencesToBeSubmitted);
-    console.log('Speichere Ausnahmen:', this.localExceptions);
-
-    this.$emit('absencesChanged', {
-      absences: this.localAbsences.concat(absencesToBeSubmitted),
-      exceptions: this.localExceptions,
-      therapistID: this.therapistID.slice(),
-    });
+    // console.log('Speichere Ausnahmen:', this.localExceptions);
 
     this.resetInputs();
   }
 
   static generateAbsenceEntries(startDate: string, endDate: string, startTime: Time, endTime: Time): Absence[] {
     const absences: Absence[] = [];
-    const currentDate = new Date(startDate);
-    const lastDate = new Date(endDate);
 
-    while (currentDate <= lastDate) {
-      const formattedDate = currentDate.toISOString().split('T')[0].split('-').reverse().join('.');
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (start > end) {
+      console.error('Fehler: Startdatum liegt nach dem Enddatum.');
+      return [];
+    }
+
+    const currentDate = new Date(start);
+
+    while (currentDate <= end) {
+      // Führende Nullen für Datum sicherstellen
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Monate in JS starten bei 0
+      const year = currentDate.getFullYear();
+      const formattedDate = `${day}.${month}.${year}`;
+
       absences.push(new Absence(formattedDate, startTime, endTime));
+
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
     console.log('Generierte Abwesenheiten:', absences);
     return absences;
-  }
-
-  addException(exception: Exception): void {
-    this.localExceptions.push(exception);
   }
 }
 </script>
