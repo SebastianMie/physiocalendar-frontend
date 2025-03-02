@@ -13,7 +13,7 @@
       >
         <v-text-field :value="therapist.name" dense @change="renameTherapist(therapist.id, $event)" />
         <v-btn icon color="primary" @click="removeTherapist(therapist.id)">
-          <v-icon>mdi-delete</v-icon>
+          <v-icon color="error">mdi-delete</v-icon>
         </v-btn>
       </v-row>
       <h6 class="text-subtitle-1 mt-8" style="color: black; font-weight: bold">
@@ -29,7 +29,6 @@
 
     <v-card-actions>
       <v-btn
-        color="error"
         text
         @click="
           reloadTherapists();
@@ -39,7 +38,7 @@
         Abbrechen
       </v-btn>
       <v-spacer></v-spacer>
-      <v-btn color="primary" button @click="commitNewTherapists()">
+      <v-btn color="success" button @click="commitNewTherapists()">
         Speichern
       </v-btn>
     </v-card-actions>
@@ -109,18 +108,32 @@ export default class Settings extends Vue {
     }
   }
 
-  commitNewTherapists(): void {
-    this.therapists.forEach((therapist) => {
+  async commitNewTherapists(): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const therapist of this.therapists) {
       if (therapist.state === 'added') {
         this.store.addTherapist({ name: therapist.name, id: therapist.id });
       } else if (therapist.state === 'removed') {
-        this.store.removeTherapist(therapist.id);
+        // eslint-disable-next-line no-await-in-loop
+        const futureAppointments = await this.store.getFutureAppointmentsForTherapist(therapist.id);
+        if (futureAppointments.length > 0) {
+          // Pop-up mit der Liste der Termine anzeigen
+          // eslint-disable-next-line no-alert
+          window.alert(
+            `Therapeut ${therapist.name} hat noch zukünftige Termine:\n\n`
+            + 'Bitte lösche die Einzeltermine oder setze das Enddatum der Serientermine.',
+          );
+          therapist.state = 'added-removed';
+        } else {
+          // Falls keine Termine vorhanden sind, wird der Therapeut gelöscht
+          this.store.removeTherapist(therapist.id);
+        }
       } else if (therapist.state === 'renamed') {
         this.store.renameTherapist({ id: therapist.id, name: therapist.name });
       }
-    });
+    }
+
     this.$emit('dialogClosed');
   }
 }
-
 </script>

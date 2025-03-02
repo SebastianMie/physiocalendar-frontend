@@ -156,6 +156,26 @@ class StoreBackup extends VuexModule {
     if (this.getBackup) {
       const localBackup = { ...this.getBackup };
       localBackup.therapists = localBackup.therapists.filter((therapist) => therapist.id !== id);
+      this.removeSeriesAppointmentsForTherapist(id);
+      this.setBackup(localBackup);
+      this.saveBackup();
+    }
+  }
+
+  @Action
+  public removeSeriesAppointmentsForTherapist(therapistID: string): void {
+    if (this.getBackup) {
+      const localBackup = { ...this.getBackup };
+
+      // Alle Serientermine des Therapeuten entfernen
+      localBackup.masterlist.elements = localBackup.masterlist.elements.map((element) => {
+        // eslint-disable-next-line no-param-reassign
+        element.appointments = element.appointments.filter(
+          (appointment) => appointment.therapistID !== therapistID,
+        );
+        return element;
+      });
+
       this.setBackup(localBackup);
       this.saveBackup();
     }
@@ -207,6 +227,21 @@ class StoreBackup extends VuexModule {
       this.setBackup(localBackup);
       this.saveBackup();
     }
+  }
+
+  @Action
+  public getFutureAppointmentsForTherapist(therapistID: string): SingleAppointment[] {
+    if (!this.getBackup) return [];
+    const localBackup = this.getBackup;
+    const today = new Date();
+    // Alle zukünftigen Einzeltermine filtern
+    const futureSingleAppointments = localBackup.daylist.elements
+      .flatMap((element) => element.appointments)
+      .filter(
+        (appointment) => appointment.therapistID === therapistID
+          && appointment.date >= today,
+      ) as SingleAppointment[];
+    return [...futureSingleAppointments];
   }
 
   @Mutation

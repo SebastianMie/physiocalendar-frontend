@@ -193,7 +193,7 @@
           clearable
         ></v-text-field>
 
-        <v-row>
+        <v-row v-if="isSingleAppointment">
           <v-col>
             <v-checkbox
               label="Heißluft"
@@ -478,12 +478,16 @@ export default class DaylistElement extends Vue {
 
   public openDialog(appointment: SingleAppointment): void {
     console.log('Dialog öffnen Replacement:', appointment.patient);
+    // Checkbox-Werte aus dem Appointment übernehmen
+    this.isHotairField = appointment.isHotair;
+    this.isUltrasonicField = appointment.isUltrasonic;
+    this.isElectricField = appointment.isElectric;
     this.$emit('openDialog', { appointment });
   }
 
   public changeAppointmentSeries(): void {
     if ((this.appointment as AppointmentSeries).startDate) {
-      console.log('speichern Serien Termin');
+      console.log('speichern Serien Termin', this.isHotairField, this.isUltrasonicField, this.isElectricField);
       this.$emit('appointmentChanged', {
         patient: this.patientTextfield,
         therapist: this.therapist,

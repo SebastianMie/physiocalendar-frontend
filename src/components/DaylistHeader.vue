@@ -85,14 +85,15 @@
 
         <v-divider></v-divider>
         <v-card-actions>
-          <v-btn color="normal" text @click="resetInputsClose()"> Abbrechen </v-btn>
-          <!-- Button für neue Abwesenheit -->
-          <v-btn color="primary" @click="newAbsence = true"> Neue Abwesenheit </v-btn>
-
-          <!-- Button für neue Ausnahme -->
-          <v-btn color="primary" @click="newException = true"> Neue Ausnahme </v-btn>
-
-          <v-btn color="success" button @click="submitAbsences()"> Speichern </v-btn>
+            <v-btn color="normal" text @click="resetInputsClose()"> Abbrechen </v-btn>
+            <v-spacer></v-spacer>
+            <!-- Button für neue Abwesenheit -->
+            <v-btn color="primary" @click="newAbsence = true"> Neue Abwesenheit </v-btn>
+            <v-spacer></v-spacer>
+            <!-- Button für neue Ausnahme -->
+            <v-btn color="primary" @click="newException = true"> Neue Ausnahme </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="success" button @click="submitAbsences()"> Speichern </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -163,8 +164,6 @@ export default class DaylistHeader extends Vue {
       absences: this.localAbsences,
       therapistID: this.therapistID,
     });
-
-    console.log('Neue Abwesenheit hinzugefügt:', newAbsence);
   }
 
   addException(): void {
@@ -178,12 +177,9 @@ export default class DaylistHeader extends Vue {
       exceptions: this.localExceptions,
       therapistID: this.therapistID,
     });
-
-    console.log('Neue Ausnahme hinzugefügt:', newException);
   }
 
   removeAbsence(index: number): void {
-    console.log('Lösche Abwesenheit:', this.localAbsences[index]);
     this.localAbsences.splice(index, 1);
 
     // Direktes Event-Feuern
@@ -195,7 +191,6 @@ export default class DaylistHeader extends Vue {
 
   // Entfernt eine Ausnahme
   removeException(index: number): void {
-    console.log('Lösche Ausnahme:', this.localExceptions[index]);
     this.localExceptions.splice(index, 1);
 
     // Direktes Event-Feuern
@@ -206,9 +201,6 @@ export default class DaylistHeader extends Vue {
   }
 
   resetInputs(): void {
-    console.log('Eingaben zurücksetzen');
-    console.log('weeklyAbsences:', this.dayAbsences);
-    console.log('day Absences:', this.masterlistAbsences);
     this.localAbsences = JSON.parse(JSON.stringify(this.masterlistAbsences));
     this.localExceptions = JSON.parse(JSON.stringify(this.exceptions));
     this.absenceStartDate = null;
@@ -222,9 +214,6 @@ export default class DaylistHeader extends Vue {
   }
 
   resetInputsClose(): void {
-    console.log('Eingaben zurücksetzen');
-    console.log('weeklyAbsences:', this.dayAbsences);
-    console.log('day Absences:', this.masterlistAbsences);
     this.localAbsences = JSON.parse(JSON.stringify(this.masterlistAbsences));
     this.localExceptions = JSON.parse(JSON.stringify(this.exceptions));
     this.absenceStartDate = null;
@@ -240,20 +229,11 @@ export default class DaylistHeader extends Vue {
   }
 
   submitAbsences(): void {
-    console.log(this.date);
     if (!this.date) return;
 
     let absencesToBeSubmitted: Absence[] = [];
-    debugger;
 
     this.addException();
-    // if (this.exceptionEndTime && this.exceptionStartTime) {
-    //   this.localExceptions.push(new Exception(this.date, this.exceptionStartTime, this.exceptionEndTime));
-    // }
-
-    // if (this.absenceStartTime && this.absenceEndTime) {
-    //   this.localAbsences.push(new Absence(this.date, this.absenceStartTime, this.absenceEndTime));
-    // }
 
     if (this.isMultiDay && this.absenceStartTime && this.absenceEndTime && this.absenceStartDate && this.absenceEndDate) {
       absencesToBeSubmitted = DaylistHeader.generateAbsenceEntries(
@@ -271,9 +251,6 @@ export default class DaylistHeader extends Vue {
     } else {
       this.addAbsence();
     }
-
-    console.log('Speichere Abwesenheiten:', absencesToBeSubmitted);
-    // console.log('Speichere Ausnahmen:', this.localExceptions);
 
     this.resetInputs();
   }
@@ -302,8 +279,6 @@ export default class DaylistHeader extends Vue {
 
       currentDate.setDate(currentDate.getDate() + 1);
     }
-
-    console.log('Generierte Abwesenheiten:', absences);
     return absences;
   }
 }

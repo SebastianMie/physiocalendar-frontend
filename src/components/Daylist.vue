@@ -355,12 +355,10 @@
               type="number"
               :rules="[v => (v > 0 && v % 1 === 0)]"
               v-model="inputFields.interval"
-              :value="inputFields.interval"
           ></v-text-field>
           <v-checkbox
               label="BWO"
               v-model="inputFields.isBWO"
-              :value="inputFields.isBWO"
             ></v-checkbox>
         </v-row>
         <v-row>
