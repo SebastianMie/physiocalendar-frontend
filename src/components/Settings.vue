@@ -123,17 +123,19 @@ export default class Settings extends Vue {
             `Therapeut ${therapist.name} hat noch zukünftige Termine:\n\n`
             + 'Bitte lösche die Einzeltermine oder setze das Enddatum der Serientermine.',
           );
-          therapist.state = 'added-removed';
+          therapist.state = 'unchanged';
         } else {
           // Falls keine Termine vorhanden sind, wird der Therapeut gelöscht
           this.store.removeTherapist(therapist.id);
+          // eslint-disable-next-line no-alert
+          window.alert(
+            `Therapeut ${therapist.name} und siene Serien Termine wurden erfolgreich gelöscht.`,
+          );
         }
       } else if (therapist.state === 'renamed') {
         this.store.renameTherapist({ id: therapist.id, name: therapist.name });
       }
     }
-
-    this.$emit('dialogClosed');
   }
 }
 </script>
