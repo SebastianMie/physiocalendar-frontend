@@ -123,14 +123,20 @@ export default class Daylist {
     while (currentSearchDate <= endDateWithoutTime) {
       // Prüfen, ob das aktuelle Suchdatum in der Zukunft liegt
       if (currentSearchDate >= presentDayDate) {
-        const conflictAppointment = this.searchAppointment(
-          therapistID,
-          Dateconversions.convertDateToReadableString(currentSearchDate),
-          startTime,
-          endTime,
+        const currentDateReadable = Dateconversions.convertDateToReadableString(currentSearchDate);
+        const isCancelled = cancellations.some(
+          (cancellation) => cancellation.date === currentDateReadable,
         );
-        if (conflictAppointment) {
-          conflicts.push(conflictAppointment);
+        if (!isCancelled) {
+          const conflictAppointment = this.searchAppointment(
+            therapistID,
+            Dateconversions.convertDateToReadableString(currentSearchDate),
+            startTime,
+            endTime,
+          );
+          if (conflictAppointment) {
+            conflicts.push(conflictAppointment);
+          }
         }
       }
       currentSearchDate.setDate(currentSearchDate.getDate() + step);

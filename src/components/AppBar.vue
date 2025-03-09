@@ -20,7 +20,7 @@
   <v-card-text class="search-results-content">
     <ul v-if="searchResults.length > 0">
       <li v-for="(result, i) in searchResults" :key="`${result.id}-${i}`">
-        <v-btn block text @click="navigateTargetDate(result.date)">
+        <v-btn block text style="justify-content: flex-start;" @click="navigateTargetDate(result.date)">
           <strong>{{ result.patient }}:</strong>
           {{
             result.startDate ? `${result.weekday}s` : getReadableDate(result.date)
