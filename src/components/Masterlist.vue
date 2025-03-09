@@ -251,7 +251,7 @@
           <v-spacer></v-spacer>
           <v-spacer></v-spacer>
           <v-btn
-            color="primary"
+            color="success"
             button
             @click="
               addAppointment({
