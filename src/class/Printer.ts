@@ -116,7 +116,6 @@ export default class Printer {
     }
     const seriesAppointmentToPrint = seriesAppointments.find((appointment) => appointment.id === this.id);
     if (!seriesAppointmentToPrint) {
-      console.log(`Kein Termin mit ID ${this.id} gefunden`);
       return;
     }
     let str = '';

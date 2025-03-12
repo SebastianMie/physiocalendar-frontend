@@ -197,8 +197,6 @@ export default class Daylist {
   deleteAppointment(appointment: SingleAppointment): void {
     const currentDay = this.findListday(appointment.date);
     if (currentDay) {
-      console.log('Deleted Appointment: ');
-      console.log(appointment);
       const newAppointments = currentDay.appointments.filter(
         (filterAppointment) => filterAppointment.id !== appointment.id,
       );

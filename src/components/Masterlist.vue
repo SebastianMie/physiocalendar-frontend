@@ -265,6 +265,7 @@
                 comment: inputFields.commentTextfield,
                 startDate: inputFields.startDate,
                 endDate: inputFields.endDate,
+                id: '',
               });
               resetInputs();
               createDialog = false;
@@ -446,7 +447,7 @@ export default class Masterlist extends Vue {
         if (header.text !== '' && !this.hasOngoingAppointments(header.value, row.startTime)) {
           const appointment = this.localBackup?.masterlist.searchAppointmentOnStartTime(header.id,
             this.currentWeekDay, row.startTime as Time);
-          if (appointment && appointment.endDate >= new Date()) {
+          if (appointment && appointment.endDate >= new Date() && appointment.patient.trim() !== '') {
             newRow[header.text] = appointment;
           } else {
             newRow[header.text] = '';

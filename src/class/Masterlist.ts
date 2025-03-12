@@ -206,7 +206,6 @@ export default class Masterlist {
     const appointmentToBeChanged = currentDay?.appointments.find(
       (searchedAppointment) => searchedAppointment.id === appointment.id,
     );
-    console.log(appointment);
     if (currentDay && appointmentToBeChanged) {
       appointmentToBeChanged.patient = appointment.patient;
       appointmentToBeChanged.startTime = appointment.startTime;

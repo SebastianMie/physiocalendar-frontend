@@ -1014,7 +1014,6 @@ export default class Daylist extends Vue {
       cancellations: Cancellation[], startDate: Date, endDate: Date, id: string, isBWO: boolean, interval: number
     },
   ): void {
-    debugger;
     if (this.localBackup) {
       const appointment = new AppointmentSeries(
         event.therapist,
