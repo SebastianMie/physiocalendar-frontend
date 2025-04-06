@@ -6,41 +6,42 @@
         <v-card-title class="text-h5 grey lighten-2">
           Abwesenheiten von {{ therapist }}
         </v-card-title>
-
         <v-card-text class="pt-5">
           <!-- Bestehende Abwesenheiten anzeigen -->
           <h3 v-if="dayAbsences.length > 0">Bestehende Abwesenheiten</h3>
-          <v-row v-for="(absence, index) in dayAbsences" :key="index">
-            <v-col>
+          <div v-for="(absence, index) in dayAbsences" :key="'absence-' + index">
+            <p class="entry">
               {{ absence.day }} - {{ absence.start }} bis {{ absence.end }}
               <v-btn icon color="error" @click="removeAbsence(index)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
-            </v-col>
-          </v-row>
+            </p>
+          </div>
+
           <!-- Bestehende Ausnahmen anzeigen -->
           <h3 v-if="exceptions.length > 0">Bestehende Ausnahmen</h3>
-          <v-row v-for="(exception, index) in exceptions" :key="index">
-            <v-col>
+          <div v-for="(exception, index) in exceptions" :key="'exception-' + index">
+            <p class="entry">
               {{ exception.day }} - {{ exception.start }} bis {{ exception.end }}
               <v-btn icon color="error" @click="removeException(index)">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
-            </v-col>
-          </v-row>
+            </p>
+          </div>
 
           <!-- Stammlisten-Abwesenheiten mit Ausnahme-Hinzufügen -->
-          <v-row v-if="masterlistAbsences.length > 0">
-            <v-col>
-              <v-alert type="info">
-                Stammlisten-Abwesenheiten:
-                <p style="margin-bottom: 0" v-for="(absence, index) in masterlistAbsences" :key="index">
-                    <v-icon>mdi-account-star</v-icon>
+          <div v-if="masterlistAbsences.length > 0">
+            <v-alert type="info">
+              Stammlisten-Abwesenheiten:
+              <div v-for="(absence, index) in masterlistAbsences" :key="'masterabsence-' + index">
+                <p class="entry">
+                  <v-icon small>mdi-account-star</v-icon>
                   {{ absence.day }} - {{ absence.start }} bis {{ absence.end }}
                 </p>
-              </v-alert>
-            </v-col>
-          </v-row>
+              </div>
+            </v-alert>
+          </div>
+
           <h3 v-if="newException"> Neue Ausnahme</h3>
           <v-row v-if="newException">
             <v-col>
@@ -283,3 +284,11 @@ export default class DaylistHeader extends Vue {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.entry {
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
+}
+</style>

@@ -764,7 +764,6 @@ export default class Daylist extends Vue {
 
   private showDialog(event: { appointment: SingleAppointment}): void {
     const { appointment } = event;
-    console.log(event.appointment);
     this.selectedAppointment.therapist = appointment.therapist;
     this.selectedAppointment.therapistID = appointment.therapistID;
     this.selectedAppointment.startTime = Dateconversions.stringFromTime(appointment.startTime);
@@ -827,7 +826,6 @@ export default class Daylist extends Vue {
       let appointments: Appointment[] = this.localBackup.daylist.getSingleAppointmentsByPatient(patient);
       appointments = appointments.concat(this.localBackup.masterlist.getAppointmentSeriesByPatient(patient));
       appointments = appointments.concat(this.localBackup.masterlist.getReplacementsByPatient(patient));
-      console.log(appointments);
       this.appointmentsForPatient = appointments;
     }
   }
@@ -924,8 +922,6 @@ export default class Daylist extends Vue {
         event.id,
         event.isBWO,
       );
-      console.log('speichern Serien Termin Daylist');
-      console.log(appointment);
       if (this.localBackup) {
         this.store.changeAppointmentSeries(appointment);
         this.resetInputs();
@@ -952,8 +948,6 @@ export default class Daylist extends Vue {
       event.isElectric,
       event.id,
     );
-    console.log('speichern Serien Termin Daylist');
-    console.log(appointment);
     if (this.localBackup) {
       this.store.changeSingleAppointment(appointment);
     }
@@ -1042,8 +1036,6 @@ export default class Daylist extends Vue {
     if (window.confirm('Soll dieser Termin wirklich unwiederruflich gelöscht werden?')) {
       if (this.localBackup) {
         this.store.deleteSingleAppointment(appointment);
-        console.log('gelöschter einzeltermin: ');
-        console.log(appointment);
         this.openSingleAppointmentDialog = false;
       }
     }

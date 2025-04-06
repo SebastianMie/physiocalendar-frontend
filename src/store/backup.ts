@@ -193,16 +193,60 @@ class StoreBackup extends VuexModule {
     }
   }
 
+  static removeOldAbsences(absences: Absence[]): Absence[] {
+    const now = new Date();
+    // Bestimme das Datum, das genau einen Monat zurückliegt
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+
+    return absences.filter((absence) => {
+      if (!absence.day.includes('.')) {
+        return true;
+      }
+      // Konvertiere den Tag (im Format "TT.MM.JJJJ") in ein Datum
+      const [day, month, year] = absence.day.split('.').map(Number);
+      const absenceDate = new Date(year, month - 1, day);
+      // Behalte nur Absagen, die nicht älter als einen Monat sind
+      return absenceDate >= oneMonthAgo;
+    });
+  }
+
+  static removeDuplicateWeekdayAbsences(absences: Absence[]): Absence[] {
+    const uniqueAbsences: Absence[] = [];
+    absences.forEach((absence) => {
+      // Wenn der Eintrag ein Datum enthält (z. B. "14.02.2023"), direkt übernehmen
+      if (absence.day.includes('.')) {
+        uniqueAbsences.push(absence);
+      } else {
+        // Für Wochentage: Prüfe, ob bereits ein Eintrag mit exakt gleichem day, start und end existiert
+        const duplicate = uniqueAbsences.find((existing) => !existing.day.includes('.')
+          && existing.day === absence.day
+          && existing.start === absence.start
+          && existing.end === absence.end);
+        if (!duplicate) {
+          uniqueAbsences.push(absence);
+        }
+      }
+    });
+    return uniqueAbsences;
+  }
+
   @Action
-  public setAbsencesForTherapistForDay(
-    { absences, therapistID, day }: { absences: Absence[], therapistID: string, day: Weekday | string },
-  ): void {
+  public setAbsencesForTherapistForDay({
+    absences,
+    therapistID,
+    day,
+  }: { absences: Absence[], therapistID: string, day: Weekday | string }): void {
     if (this.getBackup) {
       const localBackup = { ...this.getBackup };
       const foundTherapist = localBackup.therapists.find((therapist) => therapist.id === therapistID);
       if (foundTherapist) {
+        // Bestehende Abwesenheiten für den Tag filtern
         let newAbsences = foundTherapist.absences.filter((abs) => abs.day !== day);
+        // Füge die neuen Absenzen hinzu
         newAbsences = newAbsences.concat(absences);
+        // Entferne alte Abwesenheiten, die älter als ein Monat sind
+        newAbsences = StoreBackup.removeOldAbsences(newAbsences);
+        newAbsences = StoreBackup.removeDuplicateWeekdayAbsences(newAbsences);
         localBackup.therapists[localBackup.therapists.indexOf(foundTherapist)].absences = newAbsences;
       }
       this.setBackup(localBackup);
