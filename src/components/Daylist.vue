@@ -395,7 +395,7 @@
               v-for="appointment in appointmentsForPatient"
             :key="`${appointment.therapistID}-${appointment.startTime}-${appointment.weekday}`"
             >
-              {{
+                {{ appointment.patient }}, {{
                 appointment.weekday
                   ? appointment.weekday + "s"
                   : convertDateToString(appointment.date)
@@ -449,6 +449,7 @@
 </template>
 
 <script lang="ts">
+/* eslint-disable */
 import { v4 as uuidv4 } from 'uuid';
 import Appointment from '@/class/Appointment';
 import Absence from '@/class/Absence';
@@ -822,11 +823,14 @@ export default class Daylist extends Vue {
   }
 
   private searchAppointmentsForPatient(patient: string): void {
-    if (this.localBackup) {
-      let appointments: Appointment[] = this.localBackup.daylist.getSingleAppointmentsByPatient(patient);
-      appointments = appointments.concat(this.localBackup.masterlist.getAppointmentSeriesByPatient(patient));
-      appointments = appointments.concat(this.localBackup.masterlist.getReplacementsByPatient(patient));
+    const cleaned = patient.trim();
+    if (cleaned.length > 1 && this.localBackup) {
+      let appointments: Appointment[] = this.localBackup.daylist.getSingleAppointmentsByPatient(cleaned);
+      appointments = appointments.concat(this.localBackup.masterlist.getAppointmentSeriesByPatient(cleaned));
+      appointments = appointments.concat(this.localBackup.masterlist.getReplacementsByPatient(cleaned));
       this.appointmentsForPatient = appointments;
+    } else {
+      this.appointmentsForPatient = [];
     }
   }
 

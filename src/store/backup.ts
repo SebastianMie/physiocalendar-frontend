@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Absence from '@/class/Absence';
 import AppointmentSeries from '@/class/AppointmentSeries';
 import { Weekday } from '@/class/Enums';
@@ -33,14 +34,6 @@ class StoreBackup extends VuexModule {
   @Action
   public async saveBackup(importedBackup?: string): Promise<void> {
     if (this.backup) {
-      // leere Einträge löschen
-      this.backup.daylist.elements.forEach((element) => {
-        element.appointments.forEach((app) => {
-          if (app.patient === '' || app.patient === null) {
-            this.deleteSingleAppointment(app as SingleAppointment);
-          }
-        });
-      });
       try {
         const backupJSON = importedBackup ? JSON.parse(importedBackup) : convertToJSON(this.backup);
         await axios.put('http://localhost:4000/backup', backupJSON);
@@ -51,11 +44,54 @@ class StoreBackup extends VuexModule {
   }
 
   @Action
+  public removeEmptyAndDuplicateAppointments(): void {
+    if (!this.backup) return;
+
+    // Daylist: Leere + Duplikate
+    this.backup.daylist.elements = this.backup.daylist.elements.map((element) => {
+      const cleanedAppointments = element.appointments
+        .filter((app) => app.patient && app.patient.trim() !== '')
+        .filter((value, index, self) =>
+          index === self.findIndex((a) =>
+            a.date === value.date
+            && a.startTime === value.startTime
+            && a.therapistID === value.therapistID
+          )
+        );
+
+      return {
+        ...element,
+        appointments: cleanedAppointments,
+      };
+    });
+
+    // Masterlist: Leere + Duplikate
+    this.backup.masterlist.elements = this.backup.masterlist.elements.map((element) => {
+      const cleanedAppointments = element.appointments
+        .filter((app) => app.patient && app.patient.trim() !== '')
+        .filter((value, index, self) =>
+          index === self.findIndex((a) =>
+              (a as AppointmentSeries).weekday === value.weekday &&
+              (a as AppointmentSeries).startTime === value.startTime &&
+              (a as AppointmentSeries).therapistID === value.therapistID //&&
+              //(a as AppointmentSeries).startDate === (value as AppointmentSeries).startDate
+            )
+        );
+
+      return {
+        ...element,
+        appointments: cleanedAppointments,
+      };
+    });
+  }
+
+  @Action
   public addSingleAppointment(appointment: SingleAppointment): void {
     if (this.getBackup) {
       const localBackup = { ...this.getBackup };
       localBackup.daylist.addAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -66,6 +102,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.daylist.changeAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -76,6 +113,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.daylist.deleteAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -86,6 +124,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.addAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -96,6 +135,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.changeAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -106,6 +146,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.deleteAppointment(appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -116,6 +157,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.addCancellation(date, patient, appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -126,6 +168,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.changeCancellation(date, patient, appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -136,6 +179,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.masterlist.removeCancellation(date, appointment);
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
@@ -146,6 +190,7 @@ class StoreBackup extends VuexModule {
       const localBackup = { ...this.getBackup };
       localBackup.therapists.push(new Therapist(name, id, new Date(), new Date(3471292800000), [], []));
       this.setBackup(localBackup);
+      this.removeEmptyAndDuplicateAppointments();
       this.saveBackup();
     }
   }
