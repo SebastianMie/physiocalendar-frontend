@@ -129,7 +129,7 @@ export default class Printer {
       weekday,
     } = seriesAppointmentToPrint;
     if (this.currentSingleDay) {
-      let currDate = startDate;
+      let currDate = new Date(startDate.getTime());
       if (currDate < this.currentSingleDay) {
         currDate = this.currentSingleDay;
         const targetWeekday = Object.values(Weekday).indexOf(weekday); // Den Ziel-Wochentag als numerischen Wert erhalten

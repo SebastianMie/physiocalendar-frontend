@@ -285,14 +285,6 @@
         >
           Einzeltermin löschen
         </v-btn>
-        <v-btn
-          v-if="!isSingleAppointment"
-          color="error"
-          text
-          @click="deleteSeriesAppointment()"
-        >
-          Serientermin löschen
-        </v-btn>
         <v-spacer></v-spacer>
         <v-btn
           v-if="true"
@@ -570,11 +562,11 @@ export default class DaylistElement extends Vue {
       if (this.localBackup) {
         // pruefen ob ausgewähltes Zeitfenster frei Einzeltermine
         const conflictSingleAppointments: Appointment[] = this.localBackup.daylist.getSingleAppointmentsConflicts(this.therapistID,
-          this.startDate, this.startTimeSelect as unknown as Time, this.endTimeSelect as unknown as Time);
+          this.currentDate, this.startTimeSelect as unknown as Time, this.endTimeSelect as unknown as Time, this.appointment.id);
         // pruefen ob ausgewähltes Zeitfenster frei Serientermine
         const conflictSeriesAppointments: Appointment[] = this.localBackup.masterlist.getSeriesAppointmentsConflicts(this.therapistID,
-          this.startDate, this.startTimeSelect as unknown as Time, this.endTimeSelect as unknown as Time);
-        if (conflictSingleAppointments.length > 1 || conflictSeriesAppointments.length > 0) {
+          this.currentDate, this.startTimeSelect as unknown as Time, this.endTimeSelect as unknown as Time);
+        if (conflictSingleAppointments.length > 0 || conflictSeriesAppointments.length > 0) {
           /* eslint-disable */
           if (window.confirm('Die ausgewählte Zeit verursacht einen Konflikt mit einem bestehenden Termin. Bitte behebe den Konflikt vor dem Speichern.')) {
             	return;
@@ -628,28 +620,6 @@ export default class DaylistElement extends Vue {
     if (window.confirm('Soll dieser Termin wirklich unwiederruflich gelöscht werden?')) {
     // löschen eines single appointments
       this.$emit('appointmentDeleted', {
-        patient: this.patient,
-        therapist: this.therapist,
-        therapistID: this.therapistID,
-        startTime: this.startTimeSelect,
-        endTime: this.endTimeSelect,
-        comment: this.commentTextfield,
-        id: this.id,
-        isHotair: this.isHotairField,
-        isUltrasonic: this.isUltrasonicField,
-        isElectric: this.isElectricField,
-      });
-      this.requireOnePatient = false;
-      this.requireTwoPatient = false;
-      this.dialogIsOpen = false;
-    }
-  }
-
-  public deleteSeriesAppointment(): void {
-    /* eslint-disable */
-    if (window.confirm('Soll dieser Serien Termin mit samt allen zugehörigen Terminenwirklich unwiederruflich gelöscht werden?')) {
-    // löschen eines single appointments
-      this.$emit('appointmentSeriesDeleted', {
         patient: this.patient,
         therapist: this.therapist,
         therapistID: this.therapistID,

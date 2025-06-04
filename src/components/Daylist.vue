@@ -83,7 +83,6 @@
               @appointmentChanged="changeAppointment($event)"
               @singleAppointmentChanged="changeSingleAppointment($event)"
               @appointmentDeleted="deleteAppointment($event)"
-              @appointmentSeriesDeleted="deleteSeriesAppointment($event)"
               @exceptionAdded="addException($event)"
               @exceptionChanged="changeException($event)"
               @exceptionDeleted="deleteException($event)"
@@ -1003,35 +1002,6 @@ export default class Daylist extends Vue {
         event.id,
       );
       this.store.deleteSingleAppointment(appointment);
-    }
-  }
-
-  private deleteSeriesAppointment(
-    event: {
-      patient: string, therapist: string, therapistID: string, startTime: string, endTime: string, comment: string,
-      cancellations: Cancellation[], startDate: Date, endDate: Date, id: string, isBWO: boolean, interval: number
-    },
-  ): void {
-    if (this.localBackup) {
-      const appointment = new AppointmentSeries(
-        event.therapist,
-        event.therapistID,
-        event.patient,
-        event.startTime as unknown as Time,
-        event.endTime as unknown as Time,
-        event.comment,
-        false,
-        false,
-        false,
-        this.weekdayLong as Weekday,
-        event.interval,
-        event.cancellations,
-        event.startDate,
-        event.endDate,
-        event.id,
-        event.isBWO,
-      );
-      this.store.deleteAppointmentSeries(appointment);
     }
   }
 

@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-cycle
+/* eslint-disable */
 import Appointment from './Appointment';
 import Cancellation from './Cancellation';
 import Dateconversions from './Dateconversions';
@@ -43,16 +43,22 @@ export default class Daylist {
     return [];
   }
 
-  public getSingleAppointmentsConflicts(therapistId: string, date: Date, startTime: Time, endTime: Time): Appointment[] {
+  public getSingleAppointmentsConflicts(therapistId: string, date: Date, startTime: Time, endTime: Time, excludeAppointmentId?: string): Appointment[] {
     const listday = this.findListday(date);
     if (listday) {
       const appointments = listday.appointments.filter((appointment) => {
+        // Prüfe, ob der Termin am selben Kalendertag ist
+        const isSameDay =
+          appointment.date.getFullYear() === date.getFullYear() &&
+          appointment.date.getMonth() === date.getMonth() &&
+          appointment.date.getDate() === date.getDate();
         // Prüfe, ob der Therapeut der gleiche ist
         const isSameTherapist = appointment.therapistID === therapistId;
         // Prüfe auf zeitliche Überschneidung
         const startsBeforeEndTime = Time[appointment.startTime] < Time[endTime];
         const endsAfterStartTime = Time[appointment.endTime] > Time[startTime];
-        return isSameTherapist && startsBeforeEndTime && endsAfterStartTime;
+        const isNotSelf = appointment.id !== excludeAppointmentId;
+        return isSameDay && isSameTherapist && startsBeforeEndTime && endsAfterStartTime && isNotSelf;
       });
       return appointments;
     }

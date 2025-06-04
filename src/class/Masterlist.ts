@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Appointment from './Appointment';
 import AppointmentSeries from './AppointmentSeries';
 import Cancellation from './Cancellation';
@@ -152,32 +153,61 @@ export default class Masterlist {
     return appointments;
   }
 
-  public getSeriesAppointmentsConflicts(therapistId: string, date: Date, startTime: Time, endTime: Time): Appointment[] {
+  public getSeriesAppointmentsConflicts(
+    therapistId: string,
+    date: Date,
+    startTime: Time,
+    endTime: Time,
+  ): Appointment[] {
+    const jsWeekdayToEnum: Record<number, Weekday> = {
+      1: Weekday.MONDAY,
+      2: Weekday.TUESDAY,
+      3: Weekday.WEDNESDAY,
+      4: Weekday.THURSDAY,
+      5: Weekday.FRIDAY,
+    };
+  
+    const currentWeekday = jsWeekdayToEnum[date.getDay()];
+    if (!currentWeekday) return [];
+  
     const listday = this.findListdayByDate(date);
-    const dayIndex = date.getDay(); // Gibt den Index des Wochentags (0 für Sonntag, 1 für Montag, usw.) zurück
-    const weekdays = Object.values(Weekday);
-    let appointments: Appointment[] = [];
-    if (listday) {
-      appointments = listday.appointments.filter((appointment) => {
-        // Prüfe, ob der Therapeut der gleiche ist
-        const isSameTherapist = appointment.therapistID === therapistId;
-        // Prüfe auf zeitliche Überschneidung
-        const startsBeforeEndTime = Time[appointment.startTime] < Time[endTime];
-        const endsAfterStartTime = Time[appointment.endTime] > Time[startTime];
-        const sameWeekDay = appointment.weekday === weekdays[dayIndex - 1];
-        return isSameTherapist && startsBeforeEndTime && endsAfterStartTime && sameWeekDay;
-      });
-      // Filtere Appointments, die Cancellations haben, die mit dem 'date' übereinstimmen
-      appointments = appointments.filter((appointmentToBeChecked) => {
-        const hasCancellationOnDate = appointmentToBeChecked.cancellations.some((cancellation) => cancellation.date
-        === Dateconversions.convertDateToReadableString(date));
-        // Gib 'true' zurück, um den Termin zu behalten, wenn keine passenden Cancellations vorhanden sind
-        return !hasCancellationOnDate;
-      });
-      return appointments;
-    }
-    return [];
-  }
+    if (!listday) return [];
+  
+    const readableDate = Dateconversions.convertDateToReadableString(date);
+  
+    const conflictingAppointments = listday.appointments
+    .filter((appointment) => {
+      const series = appointment as AppointmentSeries;
+      // Serien-Termin muss gültig sein
+      const isSeriesInRange =
+        series.startDate &&
+        series.endDate &&
+        series.startDate.getTime() <= date.getTime() &&
+        series.endDate.getTime() >= date.getTime();
+      if (!isSeriesInRange) return false;
+
+      const isSameTherapist = series.therapistID === therapistId;
+      const startsBeforeEndTime = Time[series.startTime] < Time[endTime];
+      const endsAfterStartTime = Time[series.endTime] > Time[startTime];
+      const sameWeekday = series.weekday.toLowerCase() === currentWeekday.toLowerCase();
+
+      return (
+        isSameTherapist &&
+        startsBeforeEndTime &&
+        endsAfterStartTime &&
+        sameWeekday
+      );
+    })
+    .filter((appointment) => {
+      const series = appointment as AppointmentSeries;
+      const hasCancellationOnDate = series.cancellations.some(
+        (cancellation) => cancellation.date === readableDate
+      );
+      return !hasCancellationOnDate;
+    });
+
+    return conflictingAppointments;
+  }  
 
   private static removeDuplicates(appointmentList: AppointmentSeries[]): AppointmentSeries[] {
     const newAppointments: AppointmentSeries[] = [];

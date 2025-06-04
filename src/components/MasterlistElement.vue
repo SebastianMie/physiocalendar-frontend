@@ -491,8 +491,8 @@ export default class MasterlistElement extends Vue {
       this.day,
       this.interval,
       this.appointment.cancellations,
-      this.appointment.startDate,
-      this.appointment.endDate,
+      new Date(this.appointment.startDate.getTime()),
+      new Date(this.appointment.endDate.getTime()), 
       new Date(),
     );
     if (this.localBackup) {
