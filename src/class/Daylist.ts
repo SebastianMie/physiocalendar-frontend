@@ -34,8 +34,8 @@ export default class Daylist {
     const listday = this.findListday(date);
     if (listday) {
       const appointments = listday.appointments.filter((appointment) => appointment.therapistID === therapistId
-        && Time[appointment.startTime] >= Time[startTime]
-        && Time[appointment.endTime] <= Time[endTime]);
+        && (appointment.startTime as unknown as number) >= (startTime as unknown as number)
+        && (appointment.endTime as unknown as number) <= (endTime as unknown as number));
       if (appointments.length > 0) {
         return appointments as SingleAppointment[];
       }
@@ -46,19 +46,33 @@ export default class Daylist {
   public getSingleAppointmentsConflicts(therapistId: string, date: Date, startTime: Time, endTime: Time, excludeAppointmentId?: string): Appointment[] {
     const listday = this.findListday(date);
     if (listday) {
+      const searchStartIndex = Dateconversions.timeToIndex(startTime);
+      const searchEndIndex = Dateconversions.timeToIndex(endTime);
+
       const appointments = listday.appointments.filter((appointment) => {
         // Prüfe, ob der Termin am selben Kalendertag ist
         const isSameDay =
           appointment.date.getFullYear() === date.getFullYear() &&
           appointment.date.getMonth() === date.getMonth() &&
           appointment.date.getDate() === date.getDate();
+        
         // Prüfe, ob der Therapeut der gleiche ist
         const isSameTherapist = appointment.therapistID === therapistId;
+        
+        // Konvertiere startTime/endTime zu Indizes (können Strings oder Zahlen sein)
+        const appointmentStartIndex = Dateconversions.timeToIndex(appointment.startTime);
+        const appointmentEndIndex = Dateconversions.timeToIndex(appointment.endTime);
+        
         // Prüfe auf zeitliche Überschneidung
-        const startsBeforeEndTime = Time[appointment.startTime] < Time[endTime];
-        const endsAfterStartTime = Time[appointment.endTime] > Time[startTime];
+        // Ein Slot überschneidet sich, wenn:
+        // - Appointment startet VOR dem Slot endet UND
+        // - Appointment endet NACH dem Slot startet
+        const startsBeforeSearchEnd = appointmentStartIndex < searchEndIndex;
+        const endsAfterSearchStart = appointmentEndIndex > searchStartIndex;
+        
         const isNotSelf = appointment.id !== excludeAppointmentId;
-        return isSameDay && isSameTherapist && startsBeforeEndTime && endsAfterStartTime && isNotSelf;
+        
+        return isSameDay && isSameTherapist && startsBeforeSearchEnd && endsAfterSearchStart && isNotSelf;
       });
       return appointments;
     }

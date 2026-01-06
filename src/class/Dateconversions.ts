@@ -14,12 +14,37 @@ export default class Dateconversions {
   }
 
   static timeFromString(timeString: string): Time {
+    // Mit numerischen Enums: finde den Index für den Zeit-String
+    const timeEntries = Object.entries(Time).filter(([k]) => !Number.isNaN(Number(k)));
+    const foundEntry = timeEntries.find(([, v]) => v === timeString);
+
+    if (foundEntry) {
+      return Number(foundEntry[0]) as unknown as Time;
+    }
+
+    // Fallback: versuche selber zu berechnen
     const [hour, minute] = timeString.split(':').map(Number);
-    return Time[`${hour}:${minute}`];
+    // Time Enum hat 6 Einträge pro Stunde (7:00, 7:10, 7:20, 7:30, 7:40, 7:50)
+    // Start ist 7:00
+    const index = (hour - 7) * 6 + (minute / 10);
+    return index as unknown as Time;
   }
 
   static stringFromTime(time: Time): string {
-    return time.toString();
+    return Time[time as unknown as number];
+  }
+
+  /**
+   * Konvertiert jede Time (String oder Zahl) zu einem numerischen Index
+   * Dies ist essentiell, da die Daten manchmal Strings ("8:00") und manchmal Zahlen (6) enthalten
+   */
+  static timeToIndex(time: Time): number {
+    if (typeof time === 'string') {
+      // Es ist ein Zeit-String wie "8:00" - konvertiere zu Index
+      return this.timeFromString(time) as unknown as number;
+    }
+    // Es ist bereits ein numerischer Index
+    return time as unknown as number;
   }
 
   static convertEnglishToGermanReadableString(date: string): string {
@@ -81,13 +106,19 @@ export default class Dateconversions {
   }
 
   static appointmentIsInTimeInterval(appointment: Appointment, startTime: Time, endTime?: Time) : boolean {
+    // Konvertiere Time Enum-Werte zu numerischen Indizes für Vergleich
+    const appointmentStart = appointment.startTime as unknown as number;
+    const appointmentEnd = appointment.endTime as unknown as number;
+    const searchStart = startTime as unknown as number;
+    const searchEnd = endTime as unknown as number;
+
     if (endTime) {
-      return Time[appointment.endTime] === Time[endTime]
-      || Time[appointment.startTime] === Time[startTime]
-      || (Time[appointment.startTime] < Time[startTime] && Time[appointment.endTime] > Time[endTime])
-      || (Time[appointment.startTime] > Time[startTime] && Time[appointment.startTime] < Time[endTime])
-      || (Time[appointment.endTime] > Time[startTime] && Time[appointment.endTime] < Time[endTime]);
+      return appointmentEnd === searchEnd
+      || appointmentStart === searchStart
+      || (appointmentStart < searchStart && appointmentEnd > searchEnd)
+      || (appointmentStart > searchStart && appointmentStart < searchEnd)
+      || (appointmentEnd > searchStart && appointmentEnd < searchEnd);
     }
-    return Time[appointment.startTime] === Time[startTime];
+    return appointmentStart === searchStart;
   }
 }

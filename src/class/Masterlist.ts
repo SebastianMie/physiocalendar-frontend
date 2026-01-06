@@ -166,19 +166,22 @@ export default class Masterlist {
       4: Weekday.THURSDAY,
       5: Weekday.FRIDAY,
     };
-  
+
     const currentWeekday = jsWeekdayToEnum[date.getDay()];
     if (!currentWeekday) return [];
-  
+
     const listday = this.findListdayByDate(date);
     if (!listday) return [];
-  
+
     const readableDate = Dateconversions.convertDateToReadableString(date);
-  
+    const searchStartIndex = Dateconversions.timeToIndex(startTime);
+    const searchEndIndex = Dateconversions.timeToIndex(endTime);
+
     const conflictingAppointments = listday.appointments
     .filter((appointment) => {
       const series = appointment as AppointmentSeries;
-      // Serien-Termin muss gültig sein
+      
+      // Serien-Termin muss zeitlich gültig sein
       const isSeriesInRange =
         series.startDate &&
         series.endDate &&
@@ -187,27 +190,35 @@ export default class Masterlist {
       if (!isSeriesInRange) return false;
 
       const isSameTherapist = series.therapistID === therapistId;
-      const startsBeforeEndTime = Time[series.startTime] < Time[endTime];
-      const endsAfterStartTime = Time[series.endTime] > Time[startTime];
+      
+      // Konvertiere startTime/endTime zu Indizes (können Strings oder Zahlen sein)
+      const seriesStartIndex = Dateconversions.timeToIndex(series.startTime);
+      const seriesEndIndex = Dateconversions.timeToIndex(series.endTime);
+      
+      // Prüfe auf zeitliche Überschneidung
+      const startsBeforeSearchEnd = seriesStartIndex < searchEndIndex;
+      const endsAfterSearchStart = seriesEndIndex > searchStartIndex;
+      
       const sameWeekday = series.weekday.toLowerCase() === currentWeekday.toLowerCase();
 
       return (
         isSameTherapist &&
-        startsBeforeEndTime &&
-        endsAfterStartTime &&
+        startsBeforeSearchEnd &&
+        endsAfterSearchStart &&
         sameWeekday
       );
     })
     .filter((appointment) => {
       const series = appointment as AppointmentSeries;
-      const hasCancellationOnDate = series.cancellations.some(
+      // Filtere aus: Serien mit Stornierung an diesem Datum
+      const hasCancellationOnDate = series.cancellations && series.cancellations.some(
         (cancellation) => cancellation.date === readableDate
       );
       return !hasCancellationOnDate;
     });
 
     return conflictingAppointments;
-  }  
+  }
 
   private static removeDuplicates(appointmentList: AppointmentSeries[]): AppointmentSeries[] {
     const newAppointments: AppointmentSeries[] = [];
@@ -328,11 +339,18 @@ export default class Masterlist {
 
   private findListdayByDate(date: Date): ListWeekDay | undefined {
     const dayIndex = date.getDay(); // Gibt den Index des Wochentags (0 für Sonntag, 1 für Montag, usw.) zurück
-    const weekdays = Object.values(Weekday); // Erzeugt ein Array mit den Werten der Weekday-Enum
+    const weekdayMap: Record<number, Weekday> = {
+      1: Weekday.MONDAY,
+      2: Weekday.TUESDAY,
+      3: Weekday.WEDNESDAY,
+      4: Weekday.THURSDAY,
+      5: Weekday.FRIDAY,
+    };
+    
     if (dayIndex >= 1 && dayIndex <= 5) {
-      // Überprüfe, ob der dayIndex im gültigen Bereich für Montag bis Freitag liegt
+      const weekday = weekdayMap[dayIndex];
       return this.elements.find(
-        (listday) => listday.weekday === weekdays[dayIndex - 1],
+        (listday) => listday.weekday === weekday,
       );
     }
     return undefined;
