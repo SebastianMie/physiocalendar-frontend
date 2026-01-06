@@ -253,11 +253,7 @@
             v-for="appointment in appointmentsForPatient"
             :key="`${appointment.therapistID}-${appointment.startTime}-${weekday}`"
           >
-          {{ appointment.patient }}, {{
-              appointment.weekday
-                ? appointment.weekday + "s"
-                : convertDate(appointment.date)
-            }}, {{ appointment.startTime }} bei
+          {{ appointment.patient }}, {{ convertDate(appointment.date) }}, {{ appointment.startTime }} bei
             {{ appointment.therapist }}
           </div>
         </v-alert>
