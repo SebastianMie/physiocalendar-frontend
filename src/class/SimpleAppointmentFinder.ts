@@ -72,7 +72,7 @@ export default class SimpleAppointmentFinder {
   public getSuggestions(): SingleAppointment[] {
     const suggestions: SingleAppointment[] = [];
 
-    if (!this.patientName || this.therapistIDs.length === 0 || this.appointmentCount <= 0) {
+    if (!this.patientName || this.therapistIDs.length === 0) {
       return suggestions;
     }
 
@@ -94,7 +94,8 @@ export default class SimpleAppointmentFinder {
     }
     currentDate.setHours(0, 0, 0, 0);
 
-    while (suggestions.length < this.appointmentCount && daysSearched < this.MAX_DAYS_TO_SEARCH) {
+    // Sammle ALLE Slots im Zeitraum - nicht begrenzt auf appointmentCount
+    while (daysSearched < this.MAX_DAYS_TO_SEARCH) {
       // Überprüfe Enddatum
       if (this.searchEndDate && currentDate > this.searchEndDate) {
         break;
@@ -105,8 +106,6 @@ export default class SimpleAppointmentFinder {
       // Nur Montag-Freitag
       if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         this.therapistIDs.forEach((therapistID) => {
-          if (suggestions.length >= this.appointmentCount) return;
-
           const therapist = this.therapists.find((t) => t.id === therapistID);
           if (!therapist) return;
 
@@ -116,10 +115,9 @@ export default class SimpleAppointmentFinder {
             stepsForDuration,
           );
 
+          // Sammle alle Slots (keine Begrenzung auf appointmentCount)
           slotsForTherapist.forEach((slot) => {
-            if (suggestions.length < this.appointmentCount) {
-              suggestions.push(slot);
-            }
+            suggestions.push(slot);
           });
         });
       }
@@ -182,13 +180,17 @@ export default class SimpleAppointmentFinder {
 
       if (hasSeriesConflicts) continue;
 
-      // Slot ist frei → Vorschlag erzeugen
+      // Konvertiere numerische Indizes zu Zeit-Strings für Speicherung
+      const startTimeString = Dateconversions.stringFromTime(startTime);
+      const endTimeString = Dateconversions.stringFromTime(endTime);
+
+      // Slot ist frei → Vorschlag erzeugen MIT ZEIT-STRINGS
       const appointment = new SingleAppointment(
         therapist.name,
         therapist.id,
         this.patientName,
-        startTime,
-        endTime,
+        startTimeString as unknown as Time,
+        endTimeString as unknown as Time,
         '',
         new Date(date),
         false,

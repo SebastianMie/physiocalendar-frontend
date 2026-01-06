@@ -174,14 +174,17 @@ export default class Masterlist {
     if (!listday) return [];
 
     const readableDate = Dateconversions.convertDateToReadableString(date);
-    const searchStartIndex = Dateconversions.timeToIndex(startTime);
-    const searchEndIndex = Dateconversions.timeToIndex(endTime);
+
+    // Konvertiere zu Minuten für korrekte numerische Vergleiche
+    // String-Vergleiche funktionieren bei Zeiten NICHT ("12:00" < "9:00" ist FALSE!)
+    const searchStartMinutes = Dateconversions.timeToIndex(startTime) * 10;
+    const searchEndMinutes = Dateconversions.timeToIndex(endTime) * 10;
 
     const conflictingAppointments = listday.appointments
     .filter((appointment) => {
       const series = appointment as AppointmentSeries;
-      
-      // Serien-Termin muss zeitlich gültig sein
+
+      // Serien-Termin muss gültig sein
       const isSeriesInRange =
         series.startDate &&
         series.endDate &&
@@ -190,15 +193,16 @@ export default class Masterlist {
       if (!isSeriesInRange) return false;
 
       const isSameTherapist = series.therapistID === therapistId;
-      
-      // Konvertiere startTime/endTime zu Indizes (können Strings oder Zahlen sein)
-      const seriesStartIndex = Dateconversions.timeToIndex(series.startTime);
-      const seriesEndIndex = Dateconversions.timeToIndex(series.endTime);
-      
-      // Prüfe auf zeitliche Überschneidung
-      const startsBeforeSearchEnd = seriesStartIndex < searchEndIndex;
-      const endsAfterSearchStart = seriesEndIndex > searchStartIndex;
-      
+
+      // Konvertiere zu Minuten für numerische Vergleiche
+      const seriesStartMinutes = Dateconversions.timeToIndex(series.startTime) * 10;
+      const seriesEndMinutes = Dateconversions.timeToIndex(series.endTime) * 10;
+
+      // Prüfe auf zeitliche Überschneidung:
+      // Überschneidung existiert wenn: series.start < slot.end UND series.end > slot.start
+      const startsBeforeSearchEnd = seriesStartMinutes < searchEndMinutes;
+      const endsAfterSearchStart = seriesEndMinutes > searchStartMinutes;
+
       const sameWeekday = series.weekday.toLowerCase() === currentWeekday.toLowerCase();
 
       return (
@@ -211,7 +215,7 @@ export default class Masterlist {
     .filter((appointment) => {
       const series = appointment as AppointmentSeries;
       // Filtere aus: Serien mit Stornierung an diesem Datum
-      const hasCancellationOnDate = series.cancellations && series.cancellations.some(
+      const hasCancellationOnDate = series.cancellations.some(
         (cancellation) => cancellation.date === readableDate
       );
       return !hasCancellationOnDate;
@@ -346,7 +350,7 @@ export default class Masterlist {
       4: Weekday.THURSDAY,
       5: Weekday.FRIDAY,
     };
-    
+
     if (dayIndex >= 1 && dayIndex <= 5) {
       const weekday = weekdayMap[dayIndex];
       return this.elements.find(

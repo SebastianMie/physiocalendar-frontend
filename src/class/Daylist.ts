@@ -46,8 +46,10 @@ export default class Daylist {
   public getSingleAppointmentsConflicts(therapistId: string, date: Date, startTime: Time, endTime: Time, excludeAppointmentId?: string): Appointment[] {
     const listday = this.findListday(date);
     if (listday) {
-      const searchStartIndex = Dateconversions.timeToIndex(startTime);
-      const searchEndIndex = Dateconversions.timeToIndex(endTime);
+      // Konvertiere zu Minuten für korrekte numerische Vergleiche
+      // String-Vergleiche funktionieren bei Zeiten NICHT ("12:00" < "9:00" ist FALSE!)
+      const searchStartMinutes = Dateconversions.timeToIndex(startTime) * 10; // jeder Index = 10 Minuten
+      const searchEndMinutes = Dateconversions.timeToIndex(endTime) * 10;
 
       const appointments = listday.appointments.filter((appointment) => {
         // Prüfe, ob der Termin am selben Kalendertag ist
@@ -55,23 +57,21 @@ export default class Daylist {
           appointment.date.getFullYear() === date.getFullYear() &&
           appointment.date.getMonth() === date.getMonth() &&
           appointment.date.getDate() === date.getDate();
-        
+
         // Prüfe, ob der Therapeut der gleiche ist
         const isSameTherapist = appointment.therapistID === therapistId;
-        
-        // Konvertiere startTime/endTime zu Indizes (können Strings oder Zahlen sein)
-        const appointmentStartIndex = Dateconversions.timeToIndex(appointment.startTime);
-        const appointmentEndIndex = Dateconversions.timeToIndex(appointment.endTime);
-        
-        // Prüfe auf zeitliche Überschneidung
-        // Ein Slot überschneidet sich, wenn:
-        // - Appointment startet VOR dem Slot endet UND
-        // - Appointment endet NACH dem Slot startet
-        const startsBeforeSearchEnd = appointmentStartIndex < searchEndIndex;
-        const endsAfterSearchStart = appointmentEndIndex > searchStartIndex;
-        
+
+        // Konvertiere zu Minuten für numerische Vergleiche
+        const appointmentStartMinutes = Dateconversions.timeToIndex(appointment.startTime) * 10;
+        const appointmentEndMinutes = Dateconversions.timeToIndex(appointment.endTime) * 10;
+
+        // Prüfe auf zeitliche Überschneidung:
+        // Überschneidung existiert wenn: appointment.start < slot.end UND appointment.end > slot.start
+        const startsBeforeSearchEnd = appointmentStartMinutes < searchEndMinutes;
+        const endsAfterSearchStart = appointmentEndMinutes > searchStartMinutes;
+
         const isNotSelf = appointment.id !== excludeAppointmentId;
-        
+
         return isSameDay && isSameTherapist && startsBeforeSearchEnd && endsAfterSearchStart && isNotSelf;
       });
       return appointments;

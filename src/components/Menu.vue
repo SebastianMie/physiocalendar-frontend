@@ -1,18 +1,18 @@
 <template>
-  <v-menu offset-y>
+  <v-menu offset-y v-model="menuOpen">
     <template v-slot:activator="{ on, attrs }">
       <v-btn v-bind="attrs" v-on="on" text>
         <v-icon>mdi-menu-down</v-icon>
       </v-btn>
     </template>
     <v-list>
-      <v-list-item @click="downloadItem()" class="menu-item">
+      <v-list-item @click="downloadItem(); closeMenu()" class="menu-item">
         Backup runterladen
       </v-list-item>
       <v-list-item
         v-for="(item, index) in menuItems"
         :key="index"
-        @click.stop="item.dialog = true"
+        @click.stop="item.dialog = true; closeMenu()"
         class="menu-item"
       >
         <v-list-item-title>{{ item.title }}</v-list-item-title>
@@ -56,7 +56,13 @@ export default class Menu extends Vue {
     { title: 'Therapeuten verwalten', dialog: false },
   ];
 
+  private menuOpen = false;
+
   store = getModule(Store);
+
+  closeMenu(): void {
+    this.menuOpen = false;
+  }
 
   downloadItem(): void {
     const backup = this.store.getBackup;

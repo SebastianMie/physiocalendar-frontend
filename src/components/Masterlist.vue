@@ -438,6 +438,9 @@ export default class Masterlist extends Vue {
 
     this.rows = [];
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     emptyRows.forEach((row) => {
       const newRow: TableRow = {
         startTimeString: row.startTimeString,
@@ -447,7 +450,8 @@ export default class Masterlist extends Vue {
         if (header.text !== '' && !this.hasOngoingAppointments(header.value, row.startTime)) {
           const appointment = this.localBackup?.masterlist.searchAppointmentOnStartTime(header.id,
             this.currentWeekDay, row.startTime as Time);
-          if (appointment && appointment.patient.trim() !== '') {
+          // Nur anzeigen wenn Termin existiert, Patient hat Namen, und endDate ist NICHT in der Vergangenheit
+          if (appointment && appointment.patient.trim() !== '' && appointment.endDate >= today) {
             newRow[header.text] = appointment;
           } else {
             newRow[header.text] = '';
