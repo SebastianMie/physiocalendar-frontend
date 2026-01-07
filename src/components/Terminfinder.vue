@@ -30,7 +30,6 @@
               :loading="patientsLoading"
               :items="foundPatients"
               :search-input.sync="searchValue"
-              cache-items
               flat
               hide-no-data
               hide-details
@@ -237,7 +236,7 @@
             <v-row class="pl-3 pr-3 mb-2">
               <v-col cols="12" sm="auto">
                 <p class="font-weight-bold mb-0">
-                  Verfügbare Termine: <span class="text-primary">{{ allAppointmentSuggestions.length }}</span>
+                  Verfügbare Termine: <span class="text-primary">{{ filteredAppointmentSuggestions.length }}</span>
                 </p>
               </v-col>
             </v-row>
@@ -320,6 +319,10 @@
 
           <v-row class="pl-3 pr-3 mb-5">
             <v-btn @click="resetFinder()" color="error" text>Abbrechen</v-btn>
+            <v-btn @click="goBackToStep1()" text>
+              <v-icon left>mdi-arrow-left</v-icon>
+              Zurück zu Filter
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn
               :disabled="selectedAppointmentSuggestions.length === 0"
@@ -524,8 +527,10 @@ export default class Terminfinder extends Vue {
   @Watch('searchValue')
   searchValueChanged(val: string | undefined): boolean {
     this.foundPatients = [];
-    this.patientTextfield = val || this.patientTextfield;
-    this.searchPatients(val);
+    if (val && val.length >= 3) {
+      this.patientTextfield = val;
+      this.searchPatients(val);
+    }
     return val !== this.patientTextfield;
   }
 
@@ -661,6 +666,11 @@ export default class Terminfinder extends Vue {
     this.appointmentsPagination.page = 1;
     this.selectedTherapistFilter = null;
     this.$emit('dialogClosed');
+  }
+
+  goBackToStep1(): void {
+    this.currentStep = 1;
+    this.selectedAppointmentSuggestions = [];
   }
 
   takeAppointmentSuggestion(): void {

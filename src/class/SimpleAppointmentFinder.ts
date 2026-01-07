@@ -94,13 +94,14 @@ export default class SimpleAppointmentFinder {
     }
     currentDate.setHours(0, 0, 0, 0);
 
-    // Sammle ALLE Slots im Zeitraum - nicht begrenzt auf appointmentCount
-    while (daysSearched < this.MAX_DAYS_TO_SEARCH) {
-      // Überprüfe Enddatum
-      if (this.searchEndDate && currentDate > this.searchEndDate) {
-        break;
-      }
-
+    // Sammle ALLE Slots im Zeitraum
+    // Schleife läuft, solange:
+    // 1. searchEndDate vorhanden ist UND aktuelles Datum <= searchEndDate ist
+    // 2. ODER searchEndDate nicht vorhanden ist UND noch Tage zu durchsuchen sind
+    while (
+      (this.searchEndDate && currentDate.getTime() <= this.searchEndDate.getTime()) ||
+      (!this.searchEndDate && daysSearched < this.MAX_DAYS_TO_SEARCH)
+    ) {
       const dayOfWeek = currentDate.getDay(); // 0=So, 1=Mo, ..., 6=Sa
 
       // Nur Montag-Freitag
@@ -115,7 +116,7 @@ export default class SimpleAppointmentFinder {
             stepsForDuration,
           );
 
-          // Sammle alle Slots (keine Begrenzung auf appointmentCount)
+          // Sammle alle Slots
           slotsForTherapist.forEach((slot) => {
             suggestions.push(slot);
           });
@@ -146,22 +147,17 @@ export default class SimpleAppointmentFinder {
       return slots;
     }
 
+    // Alle möglichen Time-Indizes durchlaufen
     for (let i = frameStartIndex; i <= lastPossibleStartIndex; i += 1) {
-      // Enum-Keys zu Array konvertieren (nur numerische Indices)
-      const timeKeys = Object.keys(Time).filter(k => !Number.isNaN(Number(k)));
-
-      // Prüfe ob genug Keys vorhanden sind
-      if (i >= timeKeys.length || (i + stepsForDuration) >= timeKeys.length) {
-        continue;
-      }
-
       const startTime = i as unknown as Time;
       const endTime = (i + stepsForDuration) as unknown as Time;
 
+      // Prüfe Abwesenheiten
       if (!this.isTherapistAvailable(therapist, date, startTime, endTime)) {
         continue;
       }
 
+      // Prüfe Einzeltermin-Konflikte
       const hasSingleConflicts = this.daylist.getSingleAppointmentsConflicts(
         therapist.id,
         date,
@@ -171,6 +167,7 @@ export default class SimpleAppointmentFinder {
 
       if (hasSingleConflicts) continue;
 
+      // Prüfe Serientermin-Konflikte
       const hasSeriesConflicts = this.masterlist.getSeriesAppointmentsConflicts(
         therapist.id,
         date,
