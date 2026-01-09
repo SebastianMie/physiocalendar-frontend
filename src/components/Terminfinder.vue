@@ -424,6 +424,7 @@ import Backup from '@/class/Backup';
 import SingleAppointment from '@/class/SingleAppointment';
 import Dateconversions from '@/class/Dateconversions';
 import AppointmentSuccessNotification from './AppointmentSuccessNotification.vue';
+import holidays from '@/data/holidays.json';
 
 @Component({
   components: {
@@ -659,6 +660,7 @@ export default class Terminfinder extends Vue {
         therapists: this.backup.therapists,
         searchStartDate,
         searchEndDate,
+        holidays: holidays.days,
       });
 
       let allSuggestions = finder.getSuggestions();

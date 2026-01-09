@@ -20,6 +20,7 @@ interface FinderConfig {
   therapists: Therapist[];
   searchStartDate?: Date;          // Suchzeitraum Start (optional)
   searchEndDate?: Date;            // Suchzeitraum Ende (optional)
+  holidays?: string[];             // Array von Feiertagen im Format "YYYY-MM-DD"
 }
 
 /**
@@ -52,6 +53,8 @@ export default class SimpleAppointmentFinder {
 
   private searchEndDate: Date | undefined;
 
+  private holidays: string[];
+
   private readonly SLOT_STEP_MINUTES = 10;
 
   private readonly MAX_DAYS_TO_SEARCH = 60; // Sicherheit, keine Endlosschleife
@@ -67,6 +70,7 @@ export default class SimpleAppointmentFinder {
     this.therapists = config.therapists;
     this.searchStartDate = config.searchStartDate;
     this.searchEndDate = config.searchEndDate;
+    this.holidays = config.holidays || [];
   }
 
   public getSuggestions(): SingleAppointment[] {
@@ -104,8 +108,8 @@ export default class SimpleAppointmentFinder {
     ) {
       const dayOfWeek = currentDate.getDay(); // 0=So, 1=Mo, ..., 6=Sa
 
-      // Nur Montag-Freitag
-      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      // Nur Montag-Freitag und KEINE Feiertage
+      if (dayOfWeek >= 1 && dayOfWeek <= 5 && !this.isHoliday(currentDate)) {
         this.therapistIDs.forEach((therapistID) => {
           const therapist = this.therapists.find((t) => t.id === therapistID);
           if (!therapist) return;
@@ -288,5 +292,13 @@ export default class SimpleAppointmentFinder {
       case 5: return 'Freitag';
       default: return undefined;
     }
+  }
+
+  private isHoliday(date: Date): boolean {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    return this.holidays.includes(dateString);
   }
 }
