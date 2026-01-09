@@ -324,7 +324,7 @@
           </v-alert>
           <v-btn
             color="primary"
-            @click="resetFinder()"
+            @click="currentStep = 1"
           >
             Zurück
           </v-btn>
@@ -774,16 +774,18 @@ export default class Terminfinder extends Vue {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const checkDate = new Date(dateVal);
-    // Nicht vor heute UND keine Feiertage
-    return checkDate >= today && !this.isDateHoliday(dateVal);
+    const dayOfWeek = checkDate.getDay();
+    // Nicht vor heute UND keine Feiertage UND kein Sonntag (dayOfWeek === 0)
+    return checkDate >= today && !this.isDateHoliday(dateVal) && dayOfWeek !== 0;
   }
 
   // Allowed Dates für "Bis" Datum
   isSearchEndDateAllowed(dateVal: string): boolean {
     const startDate = this.searchStartDate ? new Date(this.searchStartDate) : new Date();
     const checkDate = new Date(dateVal);
-    // >= startDate UND keine Feiertage
-    return checkDate >= startDate && !this.isDateHoliday(dateVal);
+    const dayOfWeek = checkDate.getDay();
+    // >= startDate UND keine Feiertage UND kein Sonntag (dayOfWeek === 0)
+    return checkDate >= startDate && !this.isDateHoliday(dateVal) && dayOfWeek !== 0;
   }
 
   private formatAppointmentTime(startTime: Time, lengthMinutes: number): string {

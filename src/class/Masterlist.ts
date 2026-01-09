@@ -185,11 +185,21 @@ export default class Masterlist {
       const series = appointment as AppointmentSeries;
 
       // Serien-Termin muss gültig sein
+      // Normalisiere Daten auf Mitternacht für korrekten Vergleich
+      const normalizedCheckDate = new Date(date);
+      normalizedCheckDate.setHours(0, 0, 0, 0);
+
+      const normalizedStartDate = new Date(series.startDate);
+      normalizedStartDate.setHours(0, 0, 0, 0);
+
+      const normalizedEndDate = new Date(series.endDate);
+      normalizedEndDate.setHours(0, 0, 0, 0);
+
       const isSeriesInRange =
         series.startDate &&
         series.endDate &&
-        series.startDate.getTime() <= date.getTime() &&
-        series.endDate.getTime() >= date.getTime();
+        normalizedStartDate.getTime() <= normalizedCheckDate.getTime() &&
+        normalizedEndDate.getTime() >= normalizedCheckDate.getTime();
       if (!isSeriesInRange) return false;
 
       const isSameTherapist = series.therapistID === therapistId;
