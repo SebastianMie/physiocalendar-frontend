@@ -131,13 +131,7 @@
               </template>
               <v-date-picker
                 v-model="searchStartDate"
-                :allowed-dates="
-                  (dateVal) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return new Date(dateVal) >= today;
-                  }
-                "
+                :allowed-dates="isSearchStartDateAllowed"
                 @input="
                   searchStartDatePickerOpen = false;
                   updateSearchStartDateFormatted();
@@ -169,12 +163,7 @@
               </template>
               <v-date-picker
                 v-model="searchEndDate"
-                :allowed-dates="
-                  (dateVal) => {
-                    const startDate = searchStartDate ? new Date(searchStartDate) : new Date();
-                    return new Date(dateVal) >= startDate;
-                  }
-                "
+                :allowed-dates="isSearchEndDateAllowed"
                 @input="
                   searchEndDatePickerOpen = false;
                   updateSearchEndDateFormatted();
@@ -775,8 +764,29 @@ export default class Terminfinder extends Vue {
     }
   }
 
-  // Formatierung der Terminzeit
-  formatAppointmentTime(startTime: Time, lengthMinutes: number): string {
+  // Hilfsfunktion: Prüfe ob Datum ein Feiertag ist
+  private isDateHoliday(dateString: string): boolean {
+    return holidays.days.includes(dateString);
+  }
+
+  // Allowed Dates für "Von" Datum
+  isSearchStartDateAllowed(dateVal: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(dateVal);
+    // Nicht vor heute UND keine Feiertage
+    return checkDate >= today && !this.isDateHoliday(dateVal);
+  }
+
+  // Allowed Dates für "Bis" Datum
+  isSearchEndDateAllowed(dateVal: string): boolean {
+    const startDate = this.searchStartDate ? new Date(this.searchStartDate) : new Date();
+    const checkDate = new Date(dateVal);
+    // >= startDate UND keine Feiertage
+    return checkDate >= startDate && !this.isDateHoliday(dateVal);
+  }
+
+  private formatAppointmentTime(startTime: Time, lengthMinutes: number): string {
     // startTime kann jetzt ein String sein ("8:00") oder ein Index (6)
     const startLabel = this.timeToLabel(startTime);
 
