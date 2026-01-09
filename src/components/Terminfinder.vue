@@ -204,50 +204,41 @@
       </v-stepper-content>
 
       <!-- STEP 2 -->
-      <v-stepper-content step="2">
-        <div
-          v-if="appointmentSuggestions.length > 0"
-        >
-            <v-row class="pl-3 pr-3 mb-2">
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="selectedTherapistFilter"
-                  :items="selectedTherapistsForFilter"
-                  placeholder="Alle Therapeuten"
-                  label="Nach Therapeut filtern"
-                  clearable
-                ></v-select>
-              </v-col>
-              <v-col cols="12" sm="6" class="d-flex align-center">
-                <div class="d-flex align-center" style="width: 100%">
-                  <span class="mr-2" style="white-space: nowrap">Pro Seite:</span>
-                  <v-select
-                    v-model="appointmentsPagination.itemsPerPage"
-                    :items="[4, 8, 12, 24]"
-                    style="max-width: 80px"
-                    dense
-                    outlined
-                    hide-details
-                  ></v-select>
-                </div>
-              </v-col>
-            </v-row>
+      <v-stepper-content step="2" class="step2-container">
+        <div v-if="appointmentSuggestions.length > 0" class="step2-inner">
+          <!-- Filter Row - fixe Größe -->
+          <v-row class="pl-3 pr-3">
+            <v-col cols="12" sm="6">
+              <v-select
+                v-model="selectedTherapistFilter"
+                :items="selectedTherapistsForFilter"
+                placeholder="Alle Therapeuten"
+                label="Nach Therapeut filtern"
+                clearable
+              ></v-select>
+            </v-col>
+          </v-row>
 
-            <v-row class="pl-3 pr-3 mb-2">
-              <v-col cols="12" sm="auto">
-                <p class="font-weight-bold mb-0">
-                  Verfügbare Termine: <span class="text-primary">{{ filteredAppointmentSuggestions.length }}</span>
-                </p>
-              </v-col>
-            </v-row>
+          <!-- Verfügbare Termine Count - fixe Größe -->
+          <v-row class="pl-3 pr-3 mb-2" style="flex-shrink: 0;">
+            <v-col cols="12" sm="auto">
+              <p class="font-weight-bold mb-0">
+                Verfügbare Termine: <span class="text-primary">{{ filteredAppointmentSuggestions.length }}</span>
+              </p>
+            </v-col>
+          </v-row>
 
+          <!-- Scrollbarer Bereich mit Cards -->
+          <div class="step-content-scroll">
             <v-row class="pl-3 pr-3">
               <v-col
                 v-for="suggestion in appointmentSuggestions"
                 :key="`${suggestion.therapistID}-${suggestion.date}-${suggestion.startTime}`"
                 cols="12"
-                sm="4"
-                md="3"
+                sm="6"
+                md="4"
+                lg="3"
+                xl="2"
                 style="padding: 8px"
               >
                 <v-card
@@ -264,7 +255,7 @@
                       !isAppointmentSelected(suggestion)) ? 0.6 : 1
                   }"
                 >
-                  <v-card-text>
+                  <v-card-text style="padding: 5px">
                     <div class="d-flex align-items-center">
                       <v-checkbox
                         :value="suggestion"
@@ -277,7 +268,7 @@
                       ></v-checkbox>
                       <div class="flex-grow-1">
                         <div class="therapist-name font-weight-bold">{{ suggestion.therapist }}</div>
-                        <div class="appointment-date">{{ convertSuggestionDate(suggestion.date) }}</div>
+                        <div class="appointment-date">{{ appointmentDateDisplay(suggestion.date) }}</div>
                         <div class="appointment-time">{{ formatAppointmentTime(suggestion.startTime, appointmentLength) }}</div>
                         <div class="appointment-duration text-caption">{{ appointmentLength }} min</div>
                         <div
@@ -293,7 +284,7 @@
                 </v-card>
               </v-col>
             </v-row>
-
+            </div>
             <!-- Pagination -->
             <v-row class="pl-3 pr-3 mt-2">
               <v-col cols="12" class="d-flex justify-center">
@@ -308,20 +299,22 @@
               </v-col>
             </v-row>
 
-          <v-row class="pl-3 pr-3 mt-2">
+          <!-- Info Bereich - fixe Größe -->
+          <v-row class="pl-3 pr-3 mb-0" style="flex-shrink: 0;">
             <v-col cols="12">
-              <v-alert type="info" dense>
+              <v-alert type="info" dense class="ma-0">
                 <strong>{{ selectedAppointmentSuggestions.length }}</strong>
                 Termin{{ selectedAppointmentSuggestions.length !== 1 ? 'e' : '' }} ausgewählt
               </v-alert>
             </v-col>
           </v-row>
 
-          <v-row class="pl-3 pr-3 mb-5">
+          <!-- Button Row - fixe Größe -->
+          <v-row class="pl-3 pr-3 mb-0 step2-button-row">
             <v-btn @click="resetFinder()" color="error" text>Abbrechen</v-btn>
             <v-btn @click="goBackToStep1()" text>
               <v-icon left>mdi-arrow-left</v-icon>
-              Zurück zu Filter
+              Zurück
             </v-btn>
             <v-spacer></v-spacer>
             <v-btn
@@ -334,6 +327,7 @@
             </v-btn>
           </v-row>
         </div>
+
         <div v-else class="pa-4">
           <v-alert type="warning">
             Es wurde kein Termin gefunden. Bitte legen Sie manuell einen Termin
@@ -349,32 +343,39 @@
       </v-stepper-content>
 
       <!-- STEP 3 -->
-      <v-stepper-content step="3">
-          <p class="pl-3 font-weight-bold">Folgende Termine werden gespeichert:</p>
+      <v-stepper-content step="3" class="step2-container">
+        <div class="step2-inner">
+            <p class="pl-3 pr-3 font-weight-bold mt-3 mb-2">Patient: {{ patientTextfield }}</p>
+            <p class="pl-3 pr-3 font-weight-bold mb-5">Folgende Termine werden gespeichert:</p>
+          <!-- Scrollbarer Bereich mit Inhalten -->
+          <div class="step3-content-scroll pb-5">
+            <v-row class="pt-3 pl-3 pr-3 pb-3">
+              <v-col
+                v-for="(suggestion, index) in selectedAppointmentSuggestions"
+                :key="`${suggestion.therapistID}-${index}`"
+                cols="12"
+                sm="6"
+                md="4"
+                lg="3"
+                xl="2"
+                style="padding: 8px"
+              >
+                <v-card outlined>
+                  <v-card-text style="padding: 5px">
+                    <div class="therapist-name font-weight-bold mb-2">{{ suggestion.therapist }}</div>
+                    <div class="appointment-date mb-1">{{ appointmentDateDisplay(suggestion.date) }}</div>
+                    <div class="appointment-time mb-1">{{ formatAppointmentTime(suggestion.startTime, appointmentLength) }}</div>
+                    <div class="appointment-duration text-caption">Dauer: {{ appointmentLength }} min</div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </div>
 
-          <v-row class="pl-3 pr-3">
-            <v-col
-              v-for="(suggestion, index) in selectedAppointmentSuggestions"
-              :key="`${suggestion.therapistID}-${index}`"
-              cols="12"
-              sm="6"
-              md="4"
-              style="padding: 8px"
-            >
-              <v-card outlined>
-                <v-card-text>
-                  <div class="therapist-name font-weight-bold mb-2">{{ suggestion.therapist }}</div>
-                  <div class="appointment-date mb-1">{{ convertSuggestionDate(suggestion.date) }}</div>
-                  <div class="appointment-time mb-1">{{ formatAppointmentTime(suggestion.startTime, appointmentLength) }}</div>
-                  <div class="appointment-duration text-caption">Dauer: {{ appointmentLength }} min</div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <v-row class="pl-3 pr-3 mt-4">
+          <!-- Success Alert - fixe Größe -->
+          <v-row class="pl-3 pr-3 mb-0">
             <v-col cols="12">
-              <v-alert type="success" dense>
+              <v-alert type="success" dense class="ma-0">
                 <strong>{{ selectedAppointmentSuggestions.length }}</strong>
                 Termin{{ selectedAppointmentSuggestions.length !== 1 ? 'e' : '' }}
                 zur Bestätigung
@@ -382,17 +383,23 @@
             </v-col>
           </v-row>
 
-        <v-row class="pl-3 pr-3 mt-2 mb-5">
-          <v-btn @click="resetFinder()" color="error" text>Abbrechen</v-btn>
-          <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            @click="takeAppointmentSuggestion()"
-          >
-            <v-icon left>mdi-check</v-icon>
-            Termin speichern
-          </v-btn>
-        </v-row>
+          <!-- Button Row - fixe Größe -->
+          <v-row class="pl-3 pr-3 pb-1 step2-button-row">
+            <v-btn @click="resetFinder()" color="error" text>Abbrechen</v-btn>
+            <v-btn @click="currentStep = 2" text>
+              <v-icon left>mdi-arrow-left</v-icon>
+              Zurück
+            </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              @click="takeAppointmentSuggestion()"
+            >
+              <v-icon left>mdi-check</v-icon>
+              Termin speichern
+            </v-btn>
+          </v-row>
+        </div>
       </v-stepper-content>
     </v-stepper-items>
   </v-stepper>
@@ -446,9 +453,10 @@ export default class Terminfinder extends Vue {
   ];
 
   timeOfDayOptions = [
-    { text: 'Egal (08:00–18:00)', value: 'any' },
-    { text: 'Vormittag (08:00–12:00)', value: 'morning' },
-    { text: 'Nachmittag (12:00–18:00)', value: 'afternoon' },
+    { text: 'Egal (08:00 - 19:30)', value: 'any' },
+    { text: 'Morgens (08:00 - 12:00)', value: 'timeframe1' },
+    { text: 'Mittags (12:00 - 15:00)', value: 'timeframe2' },
+    { text: 'Nachmittags (15:00 - 19:30)', value: 'timeframe3' },
   ];
 
   timeOfDay: SimpleTimeOfDay = 'any';
@@ -609,6 +617,15 @@ export default class Terminfinder extends Vue {
   // eslint-disable-next-line class-methods-use-this
   convertSuggestionDate(date: Date): string {
     return Dateconversions.convertDateToReadableString(date);
+  }
+
+  getDayOfWeekName(date: Date): string {
+    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    return days[date.getDay()];
+  }
+
+  appointmentDateDisplay(date: Date): string {
+    return `${this.getDayOfWeekName(date)} ${this.convertSuggestionDate(date)}`;
   }
 
   formatSuggestionLabel(suggestion: SingleAppointment): string {
@@ -889,6 +906,73 @@ export default class Terminfinder extends Vue {
 <style scoped>
 .button-next {
   float: right;
+}
+
+/* Step 2 Layout - einfach und sauber */
+.step2-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.step2-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.step2-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.step3-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  max-height: 50vh;
+}
+
+.step2-button-row {
+  margin: 0 !important;
+  padding-top: 12px !important;
+  background-color: white;
+}
+
+/* Step 3 Layout - einfach und sauber */
+.step3-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.step3-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.step3-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.stepper-content-with-fixed-buttons {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.step2-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px;
 }
 
 .appointment-card {

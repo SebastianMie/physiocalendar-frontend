@@ -7,7 +7,7 @@ import Absence from './Absence';
 import Dateconversions from './Dateconversions';
 import { Time } from './Enums';
 
-export type SimpleTimeOfDay = 'any' | 'morning' | 'afternoon';
+export type SimpleTimeOfDay = 'any' | 'timeframe1' | 'timeframe2' | 'timeframe3';
 
 interface FinderConfig {
   patientName: string;
@@ -203,21 +203,26 @@ export default class SimpleAppointmentFinder {
 
   /**
    * Zeitfenster pro TimeOfDay:
-   * - any:       08:00–18:00
-   * - morning:   08:00–12:00
-   * - afternoon: 12:00–18:00
+   * - any:        08:00–19:30 (alle)
+   * - timeframe1: 08:00–12:00 (Morgen)
+   * - timeframe2: 12:00–15:00 (Mittag)
+   * - timeframe3: 15:00–19:30 (Nachmittag)
    */
   private getTimeFrameIndices(): [number, number] {
     let startLabel = '8:00';
-    let endLabel = '18:00';
+    let endLabel = '19:30';
 
-    if (this.timeOfDay === 'morning') {
+    if (this.timeOfDay === 'timeframe1') {
       startLabel = '8:00';
       endLabel = '12:00';
-    } else if (this.timeOfDay === 'afternoon') {
+    } else if (this.timeOfDay === 'timeframe2') {
       startLabel = '12:00';
-      endLabel = '18:00';
+      endLabel = '15:00';
+    } else if (this.timeOfDay === 'timeframe3') {
+      startLabel = '15:00';
+      endLabel = '19:30';
     }
+    // Bei 'any': 8:00-19:30 (siehe oben initialisiert)
 
     // Bei numerischen Enums: Time[0] = "7:00", Time[1] = "7:10", etc.
     // timeFromString gibt einen Time-Enum zurück (der ist eine Zahl)
