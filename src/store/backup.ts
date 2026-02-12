@@ -1,7 +1,7 @@
 /* eslint-disable */
 import Absence from '@/class/Absence';
 import AppointmentSeries from '@/class/AppointmentSeries';
-import { Weekday } from '@/class/Enums';
+import { Weekday, Time } from '@/class/Enums';
 import Exception from '@/class/Exception';
 import { JSONBackup } from '@/class/JSONStructures';
 import SingleAppointment from '@/class/SingleAppointment';
@@ -329,6 +329,83 @@ class StoreBackup extends VuexModule {
           && appointment.date >= today,
       ) as SingleAppointment[];
     return [...futureSingleAppointments];
+  }
+
+  @Action
+  public getFutureAppointmentsDetailsForTherapist(therapistID: string): { type: string, date: string, patient: string, time: string }[] {
+    if (!this.getBackup) return [];
+    const localBackup = this.getBackup;
+    // Setze today auf 00:00:00 für korrekten Vergleich
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const appointments: { type: string, date: string, patient: string, time: string }[] = [];
+
+    // Einzeltermine
+    const futureSingleAppointments = localBackup.daylist.elements
+      .flatMap((element) => element.appointments)
+      .filter(
+        (appointment) => appointment.therapistID === therapistID
+          && appointment.date >= today,
+      ) as SingleAppointment[];
+
+    futureSingleAppointments.forEach((apt) => {
+      if (apt && apt.patient && apt.patient.trim() !== '') {
+        appointments.push({
+          type: 'Einzeltermin',
+          date: apt.date.toLocaleDateString('de-DE'),
+          patient: apt.patient,
+          time: `${apt.startTime} - ${apt.endTime}`,
+        });
+      }
+    });
+
+    // Serientermine
+    const futureSeriesAppointments = localBackup.masterlist.elements
+      .flatMap((element) => element.appointments)
+      .filter((appointment) => appointment.therapistID === therapistID) as AppointmentSeries[];
+
+    futureSeriesAppointments.forEach((apt) => {
+      if (apt && apt.endDate >= today && apt.patient && apt.patient.trim() !== '') {
+        appointments.push({
+          type: 'Serientermin',
+          date: `${apt.startDate.toLocaleDateString('de-DE')} - ${apt.endDate.toLocaleDateString('de-DE')}`,
+          patient: apt.patient,
+          time: `${apt.startTime} - ${apt.endTime} (${apt.weekday})`,
+        });
+      }
+    });
+
+    return appointments;
+  }
+
+  @Action
+  public deleteFutureAppointmentsForTherapist(therapistID: string): void {
+    if (!this.getBackup) return;
+    const localBackup = { ...this.getBackup };
+    const today = new Date();
+
+    // Lösche Einzeltermine
+    localBackup.daylist.elements = localBackup.daylist.elements.map((element) => {
+      return {
+        ...element,
+        appointments: element.appointments.filter(
+          (appointment) => !(appointment.therapistID === therapistID && appointment.date >= today),
+        ),
+      };
+    });
+
+    // Lösche Serientermine
+    localBackup.masterlist.elements = localBackup.masterlist.elements.map((element) => {
+      return {
+        ...element,
+        appointments: element.appointments.filter(
+          (appointment) => appointment.therapistID !== therapistID,
+        ),
+      };
+    });
+
+    this.setBackup(localBackup);
+    this.saveBackup();
   }
 
   @Mutation

@@ -105,19 +105,17 @@ export default class Dateconversions {
     return times;
   }
 
-  static appointmentIsInTimeInterval(appointment: Appointment, startTime: Time, endTime?: Time) : boolean {
-    // Konvertiere Time Enum-Werte zu numerischen Indizes für Vergleich
-    const appointmentStart = appointment.startTime as unknown as number;
-    const appointmentEnd = appointment.endTime as unknown as number;
-    const searchStart = startTime as unknown as number;
-    const searchEnd = endTime as unknown as number;
+  static appointmentIsInTimeInterval(appointment: Appointment, startTime: Time, endTime?: Time): boolean {
+    // Konvertiere Time zu numerischen Indizes für korrekte Vergleiche
+    const appointmentStart = this.timeToIndex(appointment.startTime);
+    const appointmentEnd = this.timeToIndex(appointment.endTime);
+    const searchStart = this.timeToIndex(startTime);
+    const searchEnd = endTime ? this.timeToIndex(endTime) : searchStart;
 
     if (endTime) {
-      return appointmentEnd === searchEnd
-      || appointmentStart === searchStart
-      || (appointmentStart < searchStart && appointmentEnd > searchEnd)
-      || (appointmentStart > searchStart && appointmentStart < searchEnd)
-      || (appointmentEnd > searchStart && appointmentEnd < searchEnd);
+      // Überprüfe auf Zeitbereich-Überschneidung
+      // Es gibt Überschneidung wenn: appointmentEnd > searchStart AND appointmentStart < searchEnd
+      return appointmentEnd > searchStart && appointmentStart < searchEnd;
     }
     return appointmentStart === searchStart;
   }

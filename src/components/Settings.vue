@@ -117,25 +117,51 @@ export default class Settings extends Vue {
         // eslint-disable-next-line no-await-in-loop
         const futureAppointments = await this.store.getFutureAppointmentsForTherapist(therapist.id);
         if (futureAppointments.length > 0) {
-          // Pop-up mit der Liste der Termine anzeigen
+          // Detaillierte Termine abrufen
+          // eslint-disable-next-line no-await-in-loop
+          const appointmentDetails = await this.store.getFutureAppointmentsDetailsForTherapist(therapist.id);
+
+          // Termine als formatierte Liste anzeigen
+          const appointmentList = appointmentDetails.map(
+            (apt) => `${apt.type}: ${apt.date} | ${apt.patient} | ${apt.time}`,
+          ).join('\n');
+
           // eslint-disable-next-line no-alert
-          window.alert(
-            `Therapeut ${therapist.name} hat noch zukünftige Termine:\n\n`
-            + 'Bitte lösche die Einzeltermine oder setze das Enddatum der Serientermine.',
+          const confirmDelete = window.confirm(
+            `Therapeut "${therapist.name}" hat noch ${appointmentDetails.length} zukünftige Termine:\n\n${appointmentList}\n
+            \n⚠️ ACHTUNG: Diese Termine werden gelöscht!\n\nWirklich löschen und Therapeuten entfernen?`,
           );
-          therapist.state = 'unchanged';
+
+          if (confirmDelete) {
+            // Alle zukünftigen Termine löschen
+            this.store.deleteFutureAppointmentsForTherapist(therapist.id);
+            // Therapeut löschen
+            this.store.removeTherapist(therapist.id);
+            // eslint-disable-next-line no-alert
+            window.alert(
+              `Therapeut "${therapist.name}" und ${appointmentDetails.length} zukünftige Termine wurden erfolgreich gelöscht.`,
+            );
+            therapist.state = 'unchanged';
+          } else {
+            // Benutzer hat abgebrochen - der Therapeut bleibt unverändert
+            therapist.state = 'unchanged';
+          }
         } else {
           // Falls keine Termine vorhanden sind, wird der Therapeut gelöscht
           this.store.removeTherapist(therapist.id);
           // eslint-disable-next-line no-alert
           window.alert(
-            `Therapeut ${therapist.name} und siene Serien Termine wurden erfolgreich gelöscht.`,
+            `Therapeut "${therapist.name}" wurde erfolgreich gelöscht.`,
           );
         }
       } else if (therapist.state === 'renamed') {
         this.store.renameTherapist({ id: therapist.id, name: therapist.name });
       }
     }
+    // Therapeutenliste neu laden
+    this.reloadTherapists();
+    // Dialog schließen
+    this.$emit('dialogClosed');
   }
 }
 </script>
