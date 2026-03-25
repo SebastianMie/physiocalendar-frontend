@@ -221,8 +221,23 @@ export default class Printer {
       }
     });
 
-    doc.autoPrint();
-    doc.output('dataurlnewwindow');
+    // Open PDF in new tab
+    const pdfBlob = doc.output('blob');
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    const fileName = this.generateFileName();
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = fileName;
+    // Öffne PDF im neuen Tab (nicht Download)
+    window.open(pdfUrl, '_blank');
+  }
+
+  private generateFileName(): string {
+    // Format: termin_name_DD.MM.YYYY.pdf
+    const today = new Date();
+    const dateString = Dateconversions.convertDateToReadableString(today);
+    const patientNameSlug = this.patient.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    return `termin_${patientNameSlug}_${dateString}.pdf`;
   }
 
   static getWeekday(date: Date): string {

@@ -451,8 +451,17 @@ export default class Masterlist extends Vue {
           const appointment = this.localBackup?.masterlist.searchAppointmentOnStartTime(header.id,
             this.currentWeekDay, row.startTime as Time);
           // Nur anzeigen wenn Termin existiert, Patient hat Namen, und endDate ist NICHT in der Vergangenheit
-          if (appointment && appointment.patient.trim() !== '' && appointment.endDate >= today) {
-            newRow[header.text] = appointment;
+          if (appointment && appointment.patient.trim() !== '') {
+            const endDate = appointment.endDate instanceof Date
+              ? appointment.endDate
+              : new Date(appointment.endDate as number);
+            endDate.setHours(0, 0, 0, 0);
+
+            if (endDate >= today) {
+              newRow[header.text] = appointment;
+            } else {
+              newRow[header.text] = '';
+            }
           } else {
             newRow[header.text] = '';
           }
@@ -462,11 +471,25 @@ export default class Masterlist extends Vue {
     });
   }
 
-  private hasOngoingAppointments(therapist : string, time: Time) : boolean {
+  private hasOngoingAppointments(therapist: string, time: Time): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return this.rows.some((row) => {
       if (row[therapist] !== '') {
         try {
           const appointment = (row[therapist] as AppointmentSeries);
+          // Prüfe ob der Termin zeitlich noch gültig ist
+          const endDate = appointment.endDate instanceof Date
+            ? appointment.endDate
+            : new Date(appointment.endDate);
+          endDate.setHours(0, 0, 0, 0);
+
+          // Nur gültige (zukünftige) Termine prüfen
+          if (endDate < today) {
+            return false; // Abgelaufener Termin blockiert nicht
+          }
+
           if (Time[appointment.startTime] < Time[time] && Time[appointment.endTime] > Time[time]) {
             return true;
           }

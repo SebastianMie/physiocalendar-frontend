@@ -400,20 +400,14 @@ export default class MasterlistElement extends Vue {
 
   // eslint-disable-next-line class-methods-use-this
   public getCombinedStartDate(dateString: string): Date {
-    const date = dateString;
-    // console.log(dateString);
-    const timezoneOffsetInHours = new Date(`${date}T00:00:00.000Z`).getTimezoneOffset() * -1;
-    const offsetSuffix = `${timezoneOffsetInHours < 0 ? '-' : '+'}0${Math.abs(timezoneOffsetInHours / 60)}:00`;
-    return new Date(`${date}T04:00:00.000${offsetSuffix}`);
+    const [year, month, day] = dateString.split('-');
+    return new Date(+year, +month - 1, +day, 0, 0, 0, 0);
   }
 
   // eslint-disable-next-line class-methods-use-this
   public getCombinedEndDate(dateString: string): Date {
-    const date = dateString;
-    // console.log(dateString);
-    const timezoneOffsetInHours = new Date(`${date}T00:00:00.000Z`).getTimezoneOffset() * -1;
-    const offsetSuffix = `${timezoneOffsetInHours < 0 ? '-' : '+'}0${Math.abs(timezoneOffsetInHours / 60)}:00`;
-    return new Date(`${date}T04:00:00.000${offsetSuffix}`);
+    const [year, month, day] = dateString.split('-');
+    return new Date(+year, +month - 1, +day, 23, 59, 59, 999);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -483,7 +477,7 @@ export default class MasterlistElement extends Vue {
 
   private printAppointment(): void {
     const printer = new Printer(
-      this.id,
+      this.appointment.id,
       this.patient,
       this.therapist,
       this.startTime as unknown as Time,
@@ -492,28 +486,27 @@ export default class MasterlistElement extends Vue {
       this.interval,
       this.appointment.cancellations,
       new Date(this.appointment.startDate.getTime()),
-      new Date(this.appointment.endDate.getTime()), 
+      new Date(this.appointment.endDate.getTime()),
       new Date(),
     );
     if (this.localBackup) {
-      this.appointmentsForPatient = this.appointmentsForPatient.concat(
-        this.localBackup.masterlist.getAppointmentSeriesByPatient(this.patient),
-      );
+      // Lade nur die gültigen Termine für den Patienten
+      this.appointmentsForPatient = this.localBackup.masterlist.getAppointmentSeriesByPatient(this.patient);
       printer.printSeriesAppointment(this.appointmentsForPatient);
     }
   }
 
   private deleteCancellation(date: string): void {
     if (window.confirm('Soll dieser Termin Ausfall wirklich storniert werden? Einzeltermine in dem Zeitraum werden überschrieben')) {
-    // löschen einer cancellation
-    this.store.deleteCancellation({date: date, appointment: this.appointment});
+      // löschen einer cancellation
+      this.store.deleteCancellation({ date: date, appointment: this.appointment });
     }
   }
 
   private showCancellations(cancellations: Cancellation[]): Cancellation[] {
-     // Datum vor 4 Wochen
-     const fourWeeksAgo = new Date();
-     fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28); // 28 Tage entsprechen etwa 4 Wochen
+    // Datum vor 4 Wochen
+    const fourWeeksAgo = new Date();
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28); // 28 Tage entsprechen etwa 4 Wochen
 
     // Filtere die Cancellations, um nur diejenigen in der Gegenwart und Zukunft zu behalten
     const filteredCancellations = cancellations.filter(cancellation => {

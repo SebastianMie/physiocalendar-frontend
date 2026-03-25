@@ -76,10 +76,21 @@ export default class Masterlist {
 
   searchAppointmentOnStartTime(therapistID: string, weekday: Weekday, startTime: Time): AppointmentSeries | undefined {
     const currentDay = this.findListday(weekday);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (currentDay !== undefined) {
-      return currentDay.appointments.find(
-        (appointment) => Masterlist.filterAppointmentOnStartTime(therapistID, startTime, appointment as AppointmentSeries),
-      ) as AppointmentSeries;
+      return currentDay.appointments.find((appointment) => {
+        const isMatch = Masterlist.filterAppointmentOnStartTime(therapistID, startTime, appointment as AppointmentSeries);
+        if (!isMatch) return false;
+
+        // Prüfe auch ob der Termin noch gültig ist (endDate >= heute)
+        const series = appointment as AppointmentSeries;
+        const endDate = series.endDate instanceof Date ? series.endDate : new Date(series.endDate);
+        endDate.setHours(0, 0, 0, 0);
+
+        return endDate >= today;
+      }) as AppointmentSeries;
     }
     return undefined;
   }
@@ -118,9 +129,23 @@ export default class Masterlist {
   }
 
   getAppointmentSeriesByPatient(patient: string): AppointmentSeries[] {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     let appointments: Appointment[] = [];
     this.elements.forEach((listWeekDay) => {
-      appointments = appointments.concat(listWeekDay.appointments.filter((appointment) => appointment.patient === patient));
+      appointments = appointments.concat(listWeekDay.appointments.filter((appointment) => {
+        if (appointment.patient !== patient) return false;
+
+        // Filtere auch abgelaufene Termine aus
+        const series = appointment as AppointmentSeries;
+        const endDate = series.endDate instanceof Date
+          ? series.endDate
+          : new Date(series.endDate);
+        endDate.setHours(0, 0, 0, 0);
+
+        return endDate >= today;
+      }));
     });
     return Masterlist.removeDuplicates(appointments as AppointmentSeries[]);
   }

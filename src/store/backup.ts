@@ -65,16 +65,21 @@ class StoreBackup extends VuexModule {
       };
     });
 
-    // Masterlist: Leere + Duplikate
+    // Masterlist: Leere + Duplikate + Ungültige Daten
     this.backup.masterlist.elements = this.backup.masterlist.elements.map((element) => {
       const cleanedAppointments = element.appointments
         .filter((app) => app.patient && app.patient.trim() !== '')
+        .filter((app) => {
+          // Filtere Termine mit ungültigen Daten (startDate > endDate)
+          const series = app as AppointmentSeries;
+          return series.startDate && series.endDate && series.startDate.getTime() <= series.endDate.getTime();
+        })
         .filter((value, index, self) =>
           index === self.findIndex((a) =>
               (a as AppointmentSeries).weekday === value.weekday &&
               (a as AppointmentSeries).startTime === value.startTime &&
-              (a as AppointmentSeries).therapistID === value.therapistID //&&
-              //(a as AppointmentSeries).startDate === (value as AppointmentSeries).startDate
+              (a as AppointmentSeries).therapistID === value.therapistID &&
+              (a as AppointmentSeries).startDate.getTime() === (value as AppointmentSeries).startDate.getTime()
             )
         );
 
